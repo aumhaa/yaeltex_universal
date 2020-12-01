@@ -121,6 +121,7 @@ class YaeltexUniversal(ControlSurface):
 			# self._setup_device_control()
 			# self._setup_session_recording_component()
 			self._setup_main_modes()
+		self._main_modes.set_enabled(True)
 
 
 	def _setup_controls(self):
@@ -143,6 +144,15 @@ class YaeltexUniversal(ControlSurface):
 		# self._encoder_button = [MonoButtonElement(is_momentary = is_momentary, msg_type = MIDI_NOTE_TYPE, channel = CHANNEL, identifier = DS1_ENCODER_BUTTONS[index], name = 'EncoderButton_' + str(index), script = self, skin = self._skin, optimized_send_midi = optimized, resource_type = resource) for index in range(4)]
 
 		self._volume_control_matrix = ButtonMatrixElement(name = 'VolumeControlMatrix', rows = [self._volume_controls])
+
+		self._output_meter_level_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = METER_CHANNEL, identifier = METER_CCS[index], name = 'Output_Meter_Level_Control_' + str(index), num = index, script = self, optimized_send_midi = False, resource_type = resource) for index in range(16)]
+		self._output_meter_level_matrix = ButtonMatrixElement(name = 'OutputMeterLevelMatrix', rows = [self._output_meter_level_controls])
+
+		self._output_meter_left_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = METER_CHANNEL, identifier = METER_LEFT_CCS[index], name = 'Output_Meter_Left_Control_' + str(index), num = index, script = self, optimized_send_midi = False, resource_type = resource) for index in range(16)]
+		self._output_meter_left_matrix = ButtonMatrixElement(name = 'OutputMeterLeftMatrix', rows = [self._output_meter_left_controls])
+
+		self._output_meter_right_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = METER_CHANNEL, identifier = METER_LEFT_CCS[index], name = 'Output_Meter_Right_Control_' + str(index), num = index, script = self, optimized_send_midi = False, resource_type = resource) for index in range(16)]
+		self._output_meter_right_matrix = ButtonMatrixElement(name = 'OutputMeterRightMatrix', rows = [self._output_meter_right_controls])
 
 
 	def _setup_background(self):
@@ -190,7 +200,10 @@ class YaeltexUniversal(ControlSurface):
 		self._mixer = MonoMixerComponent(name = 'Mixer', num_returns = 8, tracks_provider = self._session_ring, track_assigner = SimpleTrackAssigner(), invert_mute_feedback = True, auto_name = True, enable_skinning = True, channel_strip_component_type=MonoChannelStripComponent)
 		self._mixer.master_strip().set_volume_control(self._masterVolume_control)
 		self._mixer.set_prehear_volume_control(self._cueVolume_control)
-		self._mixer.layer = Layer(volume_controls = self._volume_control_matrix)
+		self._mixer.layer = Layer(volume_controls = self._volume_control_matrix,
+			output_meter_level_controls = self._output_meter_level_matrix,
+			output_meter_left_controls = self._output_meter_left_matrix,
+			output_meter_right_controls = self._output_meter_right_matrix)
 		# self._strip = [self._mixer.channel_strip(index) for index in range(16)]
 
 		# self._mixer.selected_strip().layer = Layer(priority = 4, parameter_controls = self._selected_parameter_controls)
@@ -247,7 +260,7 @@ class YaeltexUniversal(ControlSurface):
 		self._main_modes.add_mode('Main', [self._mixer, self._session])
 		self._main_modes.layer = Layer(priority = 4)
 		self._main_modes.selected_mode = 'Main'
-		self._main_modes.set_enabled(False)
+		self._main_modes.set_enabled(True)
 
 
 	def _can_auto_arm_track(self, track):
