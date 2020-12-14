@@ -117,8 +117,8 @@ class YaeltexUniversal(ControlSurface):
 			# self._setup_m4l_interface()
 			self._setup_session_control()
 			self._setup_mixer_control()
-			# self._setup_transport_control()
-			# self._setup_device_control()
+			self._setup_transport_control()
+			self._setup_device_control()
 			# self._setup_session_recording_component()
 			self._setup_main_modes()
 		self._main_modes.set_enabled(True)
@@ -131,6 +131,7 @@ class YaeltexUniversal(ControlSurface):
 		self._mute_buttons = [MonoButtonElement(is_momentary = is_momentary, msg_type = MIDI_NOTE_TYPE, channel = MUTE_CHANNEL, identifier = MUTE_NOTES[index], name = 'MuteButton_' + str(index), script = self, skin = self._skin, optimized_send_midi = optimized, resource_type = resource) for index in range(len(MUTE_NOTES))]
 		self._solo_buttons = [MonoButtonElement(is_momentary = is_momentary, msg_type = MIDI_NOTE_TYPE, channel = SOLO_CHANNEL, identifier = SOLO_NOTES[index], name = 'SoloButton_' + str(index), script = self, skin = self._skin, optimized_send_midi = optimized, resource_type = resource) for index in range(len(SOLO_NOTES))]
 		self._arm_buttons = [MonoButtonElement(is_momentary = is_momentary, msg_type = MIDI_NOTE_TYPE, channel = ARM_CHANNEL, identifier = ARM_NOTES[index], name = 'ArmButton_' + str(index), script = self, skin = self._skin, optimized_send_midi = optimized, resource_type = resource) for index in range(len(ARM_NOTES))]
+		self._select_buttons = [MonoButtonElement(is_momentary = is_momentary, msg_type = MIDI_NOTE_TYPE, channel = SELECT_CHANNEL, identifier = SELECT_NOTES[index], name = 'SelectButton_' + str(index), script = self, skin = self._skin, optimized_send_midi = optimized, resource_type = resource) for index in range(len(SELECT_NOTES))]
 
 		self._cliplaunch_buttons = [MonoButtonElement(is_momentary = is_momentary, msg_type = MIDI_NOTE_TYPE, channel = CLIPLAUNCH_CHANNEL, identifier = CLIPLAUNCH_NOTES[index], name = 'ClipLaunchButton_' + str(index), script = self, skin = self._skin, optimized_send_midi = optimized, resource_type = resource) for index in range(len(CLIPLAUNCH_NOTES))]
 		self._clipstop_buttons = [MonoButtonElement(is_momentary = is_momentary, msg_type = MIDI_NOTE_TYPE, channel = CLIPSTOP_CHANNEL, identifier = CLIPSTOP_NOTES[index], name = 'ClipStopButton_' + str(index), script = self, skin = self._skin, optimized_send_midi = optimized, resource_type = resource) for index in range(len(CLIPSTOP_NOTES))]
@@ -160,12 +161,28 @@ class YaeltexUniversal(ControlSurface):
 		self._cueVolume_control = MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = CUE_VOLUME_CHANNEL, identifier = CUE_VOLUME_CC, name = 'Cue_Volume_Control', num = 0, script = self, optimized_send_midi = optimized, resource_type = resource)
 		self._crossfader_control = MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = CROSSFADER_CHANNEL, identifier = CROSSFADER_CC, name = 'Crossfader_Control', num = 0, script = self, optimized_send_midi = optimized, resource_type = resource)
 
+		self._parameter_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = PARAMETER_CHANNEL, identifier = PARAMETER_CCS[index], name = 'Parameter_Control_' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(len(PARAMETER_CCS))]
+
 		# self._encoder_button = [MonoButtonElement(is_momentary = is_momentary, msg_type = MIDI_NOTE_TYPE, channel = CHANNEL, identifier = DS1_ENCODER_BUTTONS[index], name = 'EncoderButton_' + str(index), script = self, skin = self._skin, optimized_send_midi = optimized, resource_type = resource) for index in range(4)]
 		self._mute_button_matrix = ButtonMatrixElement(name = 'MuteButtonMatrix', rows = [self._mute_buttons])
 		self._solo_button_matrix = ButtonMatrixElement(name = 'SoloButtonMatrix', rows = [self._solo_buttons])
 		self._arm_button_matrix = ButtonMatrixElement(name = 'ArmButtonMatrix', rows = [self._arm_buttons])
+		self._select_button_matrix = ButtonMatrixElement(name = 'SelectButtonMatrix', rows = [self._select_buttons])
+
 
 		self._volume_control_matrix = ButtonMatrixElement(name = 'VolumeControlMatrix', rows = [self._volume_controls])
+		self._pan_control_matrix = ButtonMatrixElement(name = 'PanControlMatrix', rows = [self._pan_controls])
+		self._parameter_control_matrix = ButtonMatrixElement(name = 'ParameterControlMatrix', rows = [self._parameter_controls])
+
+		self._send_control_matrix = ButtonMatrixElement(name = 'SendControlMatrix', rows = [self._sendA_controls,
+																							self._sendB_controls,
+																							self._sendC_controls,
+																							self._sendD_controls,
+																							self._sendE_controls,
+																							self._sendF_controls,
+																							self._sendG_controls,
+																							self._sendH_controls])
+
 		self._return_volume_control_matrix = ButtonMatrixElement(name = 'ReturnVolumeControlMatrix', rows = [self._return_volume_controls])
 
 		self._output_meter_level_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = METER_CHANNEL, identifier = METER_CCS[index], name = 'Output_Meter_Level_Control_' + str(index), num = index, script = self, optimized_send_midi = False, resource_type = resource) for index in range(len(METER_CCS))]
@@ -246,35 +263,39 @@ class YaeltexUniversal(ControlSurface):
 			output_meter_right_controls = self._output_meter_right_matrix,
 			mute_buttons = self._mute_button_matrix,
 			arm_buttons = self._arm_button_matrix,
-			solo_buttons = self._solo_button_matrix)
-		# self._strip = [self._mixer.channel_strip(index) for index in range(16)]
+			solo_buttons = self._solo_button_matrix,
+			track_select_buttons = self._select_button_matrix,
+			pan_controls = self._pan_control_matrix,
+			send_controls = self._send_control_matrix,
+			return_controls = self._return_volume_control_matrix,
+			crossfader_control = self._crossfader_control,
+			prehear_volume_control = self._cueVolume_control)
 
-		# self._mixer.selected_strip().layer = Layer(priority = 4, parameter_controls = self._selected_parameter_controls)
-		# self._mixer.master_strip().layer = Layer(priority = 4, parameter_controls = self._side_dial_matrix.submatrix[:3, :])
-		# self._mixer.main_layer = AddLayerMode(self._mixer, Layer(priority = 4, solo_buttons = self._bottom_buttons, mute_buttons = self._top_buttons))
-		# self._mixer.select_layer = AddLayerMode(self._mixer, Layer(priority = 4, arm_buttons = self._bottom_buttons, track_select_buttons = self._top_buttons))
-		# self.song.view.selected_track = self._mixer.channel_strip(0)._track
+		self._mixer.master_strip().layer = Layer(volme_control = self._masterVolume_control)
+
 		self._mixer.set_enabled(False)
 
 
 	def _setup_transport_control(self):
-		self._transport = SpecialTransportComponent()
+		self._transport = TransportComponent()
 		self._transport.name = 'Transport'
-		self._transport._record_toggle.view_transform = lambda value: 'Transport.RecordOn' if value else 'Transport.RecordOff'
+		# self._transport._record_toggle.view_transform = lambda value: 'Transport.RecordOn' if value else 'Transport.RecordOff'
 		self._transport.layer = Layer(priority = 4,
 			stop_button = self._stop_button,
 			play_button = self._play_button,
 			record_button = self._record_button,
 			metronome_button = self._metronome_button,
 			overdub_button = self._overdub_button)
-		self._transport.set_enabled(True)
+		self._transport.set_enabled(False)
 
 
 	def _setup_device_control(self):
 		self._device = DeviceComponent(name = 'Device_Component', device_provider = self._device_provider, device_bank_registry = DeviceBankRegistry())
+		self._device.layer = Layer(priority = 4, parameter_controls = self._parameter_control_matrix)
+		self._device.set_enabled(False)
+		# self._device_navigator = DeviceNavigator(self._device_provider, self._mixer, self)
+		# self._device_navigator.name = 'Device_Navigator'
 
-		self._device_navigator = DeviceNavigator(self._device_provider, self._mixer, self)
-		self._device_navigator.name = 'Device_Navigator'
 
 
 	def _setup_session_recording_component(self):
@@ -305,7 +326,7 @@ class YaeltexUniversal(ControlSurface):
 
 	def _setup_main_modes(self):
 		self._main_modes = ModesComponent(name = 'MainModes')
-		self._main_modes.add_mode('Main', [self._mixer, self._session])
+		self._main_modes.add_mode('Main', [self._mixer, self._session, self._transport, self._device])
 		self._main_modes.layer = Layer(priority = 4)
 		self._main_modes.selected_mode = 'Main'
 		self._main_modes.set_enabled(True)
