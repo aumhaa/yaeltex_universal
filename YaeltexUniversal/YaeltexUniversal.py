@@ -1,12 +1,12 @@
 # by amounra 1120 : http://www.aumhaa.com
 # written against Live 10.1.25 on 111520
 
-from __future__ import absolute_import, print_function
+
 import Live
 import math
 import sys
 from re import *
-from itertools import imap, chain, starmap
+from itertools import chain, starmap
 
 from ableton.v2.base import inject, listens, listens_group
 from ableton.v2.control_surface import ControlSurface, ControlElement, Layer, Skin, PrioritizedResource, Component, ClipCreator, DeviceBankRegistry
@@ -74,7 +74,7 @@ class SpecialSessionComponent(SessionComponent):
 				scene.set_launch_button(button)
 
 		else:
-			for x in xrange(self._session_ring.num_scenes):
+			for x in range(self._session_ring.num_scenes):
 				scene = self.scene(x)
 				scene.set_launch_button(None)
 
@@ -106,6 +106,9 @@ class SpecialTransportComponent(TransportComponent):
 
 class YaeltexUniversal(ControlSurface):
 
+	_timer = 0
+	_touched = 0
+	flash_status = 1
 
 	def __init__(self, c_instance):
 		super(YaeltexUniversal, self).__init__(c_instance)
@@ -336,6 +339,27 @@ class YaeltexUniversal(ControlSurface):
 		routing = track.current_input_routing
 		return routing == 'Ext: All Ins' or routing == 'All Ins' or routing.startswith('YaeltexUniversal Input')
 		#self._main_modes.selected_mode in ['Sends', 'Device'] and
+
+
+	def flash(self):
+		if(self.flash_status > 0):
+			for control in self.controls:
+				if isinstance(control, MonoButtonElement):
+					control.flash(self._timer)
+
+
+	def update_display(self):
+		super(ControlSurface, self).update_display()
+		self._timer = (self._timer + 1) % 256
+		self.flash()
+
+
+	def touched(self):
+		pass
+
+
+	def check_touch(self):
+		pass
 
 
 #	a

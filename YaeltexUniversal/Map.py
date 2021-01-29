@@ -6,52 +6,52 @@ from ableton.v2.control_surface.elements.color import Color
 from aumhaa.v2.livid.colors import *
 
 
-MUTE_NOTES = range(16)
+MUTE_NOTES = list(range(16))
 MUTE_CHANNEL = 0
 
-SOLO_NOTES = range(16, 32)
+SOLO_NOTES = list(range(16, 32))
 SOLO_CHANNEL = 0
 
-ARM_NOTES = range(32, 48)
+ARM_NOTES = list(range(32, 48))
 ARM_CHANNEL = 0
 
-SELECT_NOTES = range(48, 60)
+SELECT_NOTES = list(range(48, 60))
 SELECT_CHANNEL = 0
 
-VOLUME_CCS = range(16)
+VOLUME_CCS = list(range(16))
 VOLUME_CHANNEL = 0
 
-PAN_CCS = range(16, 32)
+PAN_CCS = list(range(16, 32))
 PAN_CHANNEL = 0
 
-PARAMETER_CCS = range(32, 40)
+PARAMETER_CCS = list(range(32, 40))
 PARAMETER_CHANNEL = 0
 
-SENDA_CCS = range(16)
+SENDA_CCS = list(range(16))
 SENDA_CHANNEL = 1
 
-SENDB_CCS = range(16,32)
+SENDB_CCS = list(range(16,32))
 SENDB_CHANNEL = 1
 
-SENDC_CCS = range(32, 48)
+SENDC_CCS = list(range(32, 48))
 SENDC_CHANNEL = 1
 
-SENDD_CCS = range(48, 64)
+SENDD_CCS = list(range(48, 64))
 SENDD_CHANNEL = 1
 
-SENDE_CCS = range(64, 80)
+SENDE_CCS = list(range(64, 80))
 SENDE_CHANNEL = 1
 
-SENDF_CCS = range(80, 96)
+SENDF_CCS = list(range(80, 96))
 SENDF_CHANNEL = 1
 
-SENDG_CCS = range(96, 112)
+SENDG_CCS = list(range(96, 112))
 SENDG_CHANNEL = 1
 
-SENDH_CCS = range(112, 128)
+SENDH_CCS = list(range(112, 128))
 SENDH_CHANNEL = 1
 
-RETURN_VOLUME_CCS = range(117, 124)
+RETURN_VOLUME_CCS = list(range(117, 124))
 RETURN_VOLUME_CHANNEL = 0
 
 CROSSFADER_CC = 125
@@ -63,18 +63,18 @@ CUE_VOLUME_CHANNEL = 0
 MASTER_VOLUME_CC = 127
 MASTER_VOLUME_CHANNEL = 0
 
-METER_CCS = range(16)
-METER_LEFT_CCS = range(16,32)
-METER_RIGHT_CCS = range(32,48)
+METER_CCS = list(range(16))
+METER_LEFT_CCS = list(range(16,32))
+METER_RIGHT_CCS = list(range(32,48))
 METER_CHANNEL = 15
 
-CLIPLAUNCH_NOTES = range(128)
+CLIPLAUNCH_NOTES = list(range(128))
 CLIPLAUNCH_CHANNEL = 1
 
-CLIPSTOP_NOTES = range(16)
+CLIPSTOP_NOTES = list(range(16))
 CLIPSTOP_CHANNEL = 2
 
-SCENELAUNCH_NOTES = range(16,24)
+SCENELAUNCH_NOTES = list(range(16,24))
 SCENELAUNCH_CHANNEL = 2
 
 ALLCLIPSTOP_NOTE = 127
