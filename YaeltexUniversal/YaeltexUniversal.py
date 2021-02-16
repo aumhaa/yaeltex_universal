@@ -25,20 +25,22 @@ from .mono_mixer import MonoMixerComponent, MonoChannelStripComponent
 from .device import DeviceComponent
 from .mono_button import *
 from .mono_encoder import MonoEncoderElement
+from .debug import initialize_debug
+
+debug = initialize_debug()
 
 
-DEBUG = False
-
-try:
-	from aumhaa.v2.base import initialize_debug
-except:
-	def log_flattened_arguments(*a, **k):
-		args = ''
-		for item in a:
-			args = args + str(item) + ' '
-		logger.info(args)
-	def initialize_debug():
-		return log_flattened_arguments if DEBUG else no_debug
+# DEBUG = False
+# try:
+# 	from aumhaa.v2.base import initialize_debug
+# except:
+# 	def log_flattened_arguments(*a, **k):
+# 		args = ''
+# 		for item in a:
+# 			args = args + str(item) + ' '
+# 		logger.info(args)
+# 	def initialize_debug():
+# 		return log_flattened_arguments if DEBUG else no_debug
 
 
 MIDI_NOTE_TYPE = 0

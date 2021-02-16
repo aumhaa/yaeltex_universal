@@ -41,7 +41,7 @@ def get_control_surfaces():
 		return getattr(__builtins__, CS_LIST_KEY)
 
 
-DEBUG = True
+DEBUG = False
 
 def _normalize_filename(filename):
 	if filename is not None:

@@ -3,7 +3,7 @@
 
 
 from ableton.v2.control_surface.elements.color import Color
-from aumhaa.v2.livid.colors import *
+from .colors import *
 
 
 MUTE_NOTES = list(range(16))

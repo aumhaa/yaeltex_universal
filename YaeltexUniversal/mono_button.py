@@ -8,7 +8,7 @@ import math
 
 from ableton.v2.control_surface.elements.button import ButtonElement
 from ableton.v2.control_surface.skin import Skin, SkinColorMissingError
-from aumhaa.v2.control_surface.elements.mono_bridge import MonoBridgeProxy
+from .mono_bridge import MonoBridgeProxy
 from .debug import initialize_debug
 
 MIDI_NOTE_TYPE = 0
