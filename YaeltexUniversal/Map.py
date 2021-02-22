@@ -5,6 +5,8 @@
 from ableton.v2.control_surface.elements.color import Color
 from .colors import *
 
+VU_METER_LOG_SCALING = False
+
 SESSION_BOX_SIZE = (16, 8)  #maximum size for this is 16 tracks x 8 scenes
 
 MUTE_NOTES = list(range(16))

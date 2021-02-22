@@ -15,6 +15,8 @@ from _Generic.Devices import *
 
 from .device import DeviceComponent
 from .debug import *
+from .Map import VU_METER_LOG_SCALING as VU_METER_LOG_SCALING
+
 
 debug = initialize_debug()
 
@@ -231,10 +233,16 @@ class MonoChannelStripComponent(ChannelStripComponentBase):
 			self.update()
 
 	def _scaled_value(self, pos, minp = 0, maxp= 1):
-		minv = 0
-		maxv = math.log(127)
-		scale = (maxv-minv) / (maxp-minp)
-		return math.exp(minv + scale*(pos-minp))
+		if VU_METER_LOG_SCALING:
+			minv = 0
+			maxv = math.log(127)
+			scale = (maxv-minv) / (maxp-minp)
+			return math.exp(minv + scale*(pos-minp))
+		else:
+			# minv = 0
+			# maxv = 127
+			#scale = (maxv-minv) / (maxp-minp)
+			return int(127*pos)
 
 
 	def _on_output_meter_level_changed(self):
