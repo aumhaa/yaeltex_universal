@@ -573,9 +573,6 @@ class YaeltexUniversal(ControlSurface):
 
 		self._mixer.layer = Layer(priority = 4,
 			volume_controls = self._volume_control_matrix,
-			output_meter_level_controls = self._output_meter_level_matrix,
-			output_meter_left_controls = self._output_meter_left_matrix,
-			output_meter_right_controls = self._output_meter_right_matrix,
 			summed_output_meter_level_controls = self._output_meter_sum_matrix,
 			mute_buttons = self._mute_button_matrix,
 			arm_buttons = self._arm_button_matrix,
@@ -587,6 +584,10 @@ class YaeltexUniversal(ControlSurface):
 			crossfader_control = self._crossfader_control,
 			prehear_volume_control = self._cueVolume_control,
 			crossfade_toggles = self._crossfade_assign_button_matrix)
+
+			# output_meter_level_controls = self._output_meter_level_matrix,
+			# output_meter_left_controls = self._output_meter_left_matrix,
+			# output_meter_right_controls = self._output_meter_right_matrix,
 
 		self._mixer.master_strip().layer = Layer(volume_control = self._masterVolume_control)
 
