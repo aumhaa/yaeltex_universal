@@ -140,7 +140,7 @@ TRANSPORT_CLICK_NOTE = 5
 TRANSPORT_TAPTEMPO_NOTE = 6
 TRANSPORT_LOOP_NOTE = 7
 
-TRANSPORT_CHANNEL = 3
+TRANSPORT_CHANNEL = 4
 
 
 # These color values can easily be set to numerical values:

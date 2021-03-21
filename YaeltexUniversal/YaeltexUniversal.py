@@ -595,7 +595,7 @@ class YaeltexUniversal(ControlSurface):
 
 
 	def _setup_transport_control(self):
-		self._transport = SpecialTransportComponent()
+		self._transport = TransportComponent()
 		self._transport.name = 'Transport'
 		# self._transport._record_toggle.view_transform = lambda value: 'Transport.RecordOn' if value else 'Transport.RecordOff'
 		self._transport.layer = Layer(priority = 4,
@@ -626,7 +626,7 @@ class YaeltexUniversal(ControlSurface):
 
 	def _setup_main_modes(self):
 		self._main_modes = ModesComponent(name = 'MainModes')
-		self._main_modes.add_mode('Main', [self._transport, self._device, self._session, self._session_navigation, self._mixer])
+		self._main_modes.add_mode('Main', [self._device, self._session, self._session_navigation, self._mixer, self._transport])
 		self._main_modes.layer = Layer(priority = 4)
 		self._main_modes.selected_mode = 'Main'
 		self._main_modes.set_enabled(True)
