@@ -5,6 +5,7 @@
 import Live
 import math
 import sys
+import logging
 from re import *
 from itertools import chain, starmap
 
@@ -26,7 +27,7 @@ from .device import DeviceComponent
 from .mono_button import *
 from .mono_encoder import MonoEncoderElement
 from .debug import initialize_debug
-
+logger = logging.getLogger(__name__)
 debug = initialize_debug()
 
 
@@ -137,6 +138,7 @@ class SpecialTransportComponent(TransportComponent):
 		self.song.tap_tempo()
 
 
+
 class YaeltexUniversal(ControlSurface):
 
 	_timer = 0
@@ -202,86 +204,35 @@ class YaeltexUniversal(ControlSurface):
 
 		self._track_parameter_on_off_buttons  = [MonoButtonElement(is_momentary = is_momentary, msg_type = MIDI_NOTE_TYPE, channel = TRACK_PARAMETER_ON_OFF_CHANNEL, identifier = TRACK_PARAMETER_ON_OFF_NOTES[index], name = 'TrackParameterOnOff_Button_' + str(index), script = self, skin = self._skin, optimized_send_midi = optimized, resource_type = resource) for index in range(len(TRACK_PARAMETER_ON_OFF_NOTES))]
 
-		self._track1_parameter1_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK1_PARAMETER_CHANNEL, identifier = TRACK1_PARAMETER_CCS[index], name = 'Track1_Device1_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track1_parameter2_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK1_PARAMETER_CHANNEL, identifier = TRACK1_PARAMETER_CCS[index+8], name = 'Track1_Device2_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track1_parameter3_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK1_PARAMETER_CHANNEL, identifier = TRACK1_PARAMETER_CCS[index+16], name = 'Track1_Device3_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track1_parameter4_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK1_PARAMETER_CHANNEL, identifier = TRACK1_PARAMETER_CCS[index+24], name = 'Track1_Device4_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track1_parameter5_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK1_PARAMETER_CHANNEL, identifier = TRACK1_PARAMETER_CCS[index+32], name = 'Track1_Device5_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track1_parameter6_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK1_PARAMETER_CHANNEL, identifier = TRACK1_PARAMETER_CCS[index+40], name = 'Track1_Device6_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track1_parameter7_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK1_PARAMETER_CHANNEL, identifier = TRACK1_PARAMETER_CCS[index+48], name = 'Track1_Device7_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track1_parameter8_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK1_PARAMETER_CHANNEL, identifier = TRACK1_PARAMETER_CCS[index+56], name = 'Track1_Device8_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
+		def make_track_parameter_controls(instance, track_index, device_index, chn, ccs):
+			attr_name = str('_track'+str(track_index+1)+'_parameter'+str(device_index+1)+'controls')
+			element_name = str('Track'+str(track_index+1)+'_Device'+str(device_index+1)+'_Parameter_Controls')
+			elements = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = chn, identifier = ccs[index+(8*device_index)], name = element_name + str(index), num = index, script = instance, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
+			setattr(instance, attr_name, elements)
+			matrix_attr_name = '_track'+str(track_index+1)+'_parameter'+str(device_index+1)+'_control_matrix'
+			matrix_element_name = 'Track'+str(track_index+1)+'_Parameter1_Matrix'
+			matrix = ButtonMatrixElement(name = matrix_element_name, rows = [getattr(instance, attr_name)])
+			setattr(instance, matrix_attr_name, matrix)
 
-		self._track2_parameter1_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK2_PARAMETER_CHANNEL, identifier = TRACK2_PARAMETER_CCS[index], name = 'Track2_Device1_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track2_parameter2_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK2_PARAMETER_CHANNEL, identifier = TRACK2_PARAMETER_CCS[index+8], name = 'Track2_Device2_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track2_parameter3_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK2_PARAMETER_CHANNEL, identifier = TRACK2_PARAMETER_CCS[index+16], name = 'Track2_Device3_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track2_parameter4_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK2_PARAMETER_CHANNEL, identifier = TRACK2_PARAMETER_CCS[index+24], name = 'Track2_Device4_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track2_parameter5_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK2_PARAMETER_CHANNEL, identifier = TRACK2_PARAMETER_CCS[index+32], name = 'Track2_Device5_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track2_parameter6_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK2_PARAMETER_CHANNEL, identifier = TRACK2_PARAMETER_CCS[index+40], name = 'Track2_Device6_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track2_parameter7_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK2_PARAMETER_CHANNEL, identifier = TRACK2_PARAMETER_CCS[index+48], name = 'Track2_Device7_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track2_parameter8_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK2_PARAMETER_CHANNEL, identifier = TRACK2_PARAMETER_CCS[index+56], name = 'Track2_Device8_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
 
-		self._track3_parameter1_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK3_PARAMETER_CHANNEL, identifier = TRACK3_PARAMETER_CCS[index], name = 'Track3_Device1_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track3_parameter2_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK3_PARAMETER_CHANNEL, identifier = TRACK3_PARAMETER_CCS[index+8], name = 'Track3_Device2_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track3_parameter3_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK3_PARAMETER_CHANNEL, identifier = TRACK3_PARAMETER_CCS[index+16], name = 'Track3_Device3_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track3_parameter4_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK3_PARAMETER_CHANNEL, identifier = TRACK3_PARAMETER_CCS[index+24], name = 'Track3_Device4_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track3_parameter5_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK3_PARAMETER_CHANNEL, identifier = TRACK3_PARAMETER_CCS[index+32], name = 'Track3_Device5_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track3_parameter6_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK3_PARAMETER_CHANNEL, identifier = TRACK3_PARAMETER_CCS[index+40], name = 'Track3_Device6_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track3_parameter7_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK3_PARAMETER_CHANNEL, identifier = TRACK3_PARAMETER_CCS[index+48], name = 'Track3_Device7_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track3_parameter8_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK3_PARAMETER_CHANNEL, identifier = TRACK3_PARAMETER_CCS[index+56], name = 'Track3_Device8_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
+		for track in range(8):
+			for device in range(8):
+				make_track_parameter_controls(instance = self, track_index = track, device_index = device, chn = TRACK_PARAMETER_CHANNELS[track], ccs = TRACK_PARAMETER_CCS[track])
 
-		self._track4_parameter1_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK4_PARAMETER_CHANNEL, identifier = TRACK4_PARAMETER_CCS[index], name = 'Track4_Device1_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track4_parameter2_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK4_PARAMETER_CHANNEL, identifier = TRACK4_PARAMETER_CCS[index+8], name = 'Track4_Device2_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track4_parameter3_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK4_PARAMETER_CHANNEL, identifier = TRACK4_PARAMETER_CCS[index+16], name = 'Track4_Device3_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track4_parameter4_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK4_PARAMETER_CHANNEL, identifier = TRACK4_PARAMETER_CCS[index+24], name = 'Track4_Device4_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track4_parameter5_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK4_PARAMETER_CHANNEL, identifier = TRACK4_PARAMETER_CCS[index+32], name = 'Track4_Device5_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track4_parameter6_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK4_PARAMETER_CHANNEL, identifier = TRACK4_PARAMETER_CCS[index+40], name = 'Track4_Device6_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track4_parameter7_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK4_PARAMETER_CHANNEL, identifier = TRACK4_PARAMETER_CCS[index+48], name = 'Track4_Device7_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track4_parameter8_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK4_PARAMETER_CHANNEL, identifier = TRACK4_PARAMETER_CCS[index+56], name = 'Track4_Device8_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
+		def make_selected_track_parameter_controls(instance, device_index, chn, ccs):
+			attr_name = str('_selected_track_parameter'+str(device_index+1)+'controls')
+			element_name = str('SelectedTrack_Device'+str(device_index+1)+'_Parameter_Controls')
+			elements = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = chn, identifier = ccs[index+(8*device_index)], name = element_name + str(index), num = index, script = instance, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
+			setattr(instance, attr_name, elements)
+			matrix_attr_name = '_selected_track_parameter'+str(device_index+1)+'_control_matrix'
+			# logger.warning('name is:'+matrix_attr_name)
+			matrix_element_name = 'SelectedTrack_Parameter'+str(device_index+1)+'_Matrix'
+			matrix = ButtonMatrixElement(name = matrix_element_name, rows = [getattr(instance, attr_name)])
+			setattr(instance, matrix_attr_name, matrix)
 
-		self._track5_parameter1_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK5_PARAMETER_CHANNEL, identifier = TRACK5_PARAMETER_CCS[index], name = 'Track5_Device1_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track5_parameter2_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK5_PARAMETER_CHANNEL, identifier = TRACK5_PARAMETER_CCS[index+8], name = 'Track5_Device2_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track5_parameter3_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK5_PARAMETER_CHANNEL, identifier = TRACK5_PARAMETER_CCS[index+16], name = 'Track5_Device3_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track5_parameter4_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK5_PARAMETER_CHANNEL, identifier = TRACK5_PARAMETER_CCS[index+24], name = 'Track5_Device4_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track5_parameter5_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK5_PARAMETER_CHANNEL, identifier = TRACK5_PARAMETER_CCS[index+32], name = 'Track5_Device5_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track5_parameter6_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK5_PARAMETER_CHANNEL, identifier = TRACK5_PARAMETER_CCS[index+40], name = 'Track5_Device6_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track5_parameter7_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK5_PARAMETER_CHANNEL, identifier = TRACK5_PARAMETER_CCS[index+48], name = 'Track5_Device7_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track5_parameter8_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK5_PARAMETER_CHANNEL, identifier = TRACK5_PARAMETER_CCS[index+56], name = 'Track5_Device8_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
+		for device in range(8):
+			make_selected_track_parameter_controls(instance = self, device_index = device, chn = SELECTEDTRACK_PARAMETER_CHANNEL, ccs = SELECTEDTRACK_PARAMETER_CCS)
 
-		self._track6_parameter1_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK6_PARAMETER_CHANNEL, identifier = TRACK6_PARAMETER_CCS[index], name = 'Track6_Device1_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track6_parameter2_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK6_PARAMETER_CHANNEL, identifier = TRACK6_PARAMETER_CCS[index+8], name = 'Track6_Device2_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track6_parameter3_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK6_PARAMETER_CHANNEL, identifier = TRACK6_PARAMETER_CCS[index+16], name = 'Track6_Device3_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track6_parameter4_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK6_PARAMETER_CHANNEL, identifier = TRACK6_PARAMETER_CCS[index+24], name = 'Track6_Device4_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track6_parameter5_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK6_PARAMETER_CHANNEL, identifier = TRACK6_PARAMETER_CCS[index+32], name = 'Track6_Device5_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track6_parameter6_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK6_PARAMETER_CHANNEL, identifier = TRACK6_PARAMETER_CCS[index+40], name = 'Track6_Device6_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track6_parameter7_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK6_PARAMETER_CHANNEL, identifier = TRACK6_PARAMETER_CCS[index+48], name = 'Track6_Device7_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track6_parameter8_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK6_PARAMETER_CHANNEL, identifier = TRACK6_PARAMETER_CCS[index+56], name = 'Track6_Device8_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-
-		self._track7_parameter1_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK7_PARAMETER_CHANNEL, identifier = TRACK7_PARAMETER_CCS[index], name = 'Track7_Device1_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track7_parameter2_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK7_PARAMETER_CHANNEL, identifier = TRACK7_PARAMETER_CCS[index+8], name = 'Track7_Device2_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track7_parameter3_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK7_PARAMETER_CHANNEL, identifier = TRACK7_PARAMETER_CCS[index+16], name = 'Track7_Device3_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track7_parameter4_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK7_PARAMETER_CHANNEL, identifier = TRACK7_PARAMETER_CCS[index+24], name = 'Track7_Device4_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track7_parameter5_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK7_PARAMETER_CHANNEL, identifier = TRACK7_PARAMETER_CCS[index+32], name = 'Track7_Device5_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track7_parameter6_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK7_PARAMETER_CHANNEL, identifier = TRACK7_PARAMETER_CCS[index+40], name = 'Track7_Device6_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track7_parameter7_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK7_PARAMETER_CHANNEL, identifier = TRACK7_PARAMETER_CCS[index+48], name = 'Track7_Device7_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track7_parameter8_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK7_PARAMETER_CHANNEL, identifier = TRACK7_PARAMETER_CCS[index+56], name = 'Track7_Device8_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-
-		self._track8_parameter1_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK8_PARAMETER_CHANNEL, identifier = TRACK8_PARAMETER_CCS[index], name = 'Track8_Device1_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track8_parameter2_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK8_PARAMETER_CHANNEL, identifier = TRACK8_PARAMETER_CCS[index+8], name = 'Track8_Device2_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track8_parameter3_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK8_PARAMETER_CHANNEL, identifier = TRACK8_PARAMETER_CCS[index+16], name = 'Track8_Device3_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track8_parameter4_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK8_PARAMETER_CHANNEL, identifier = TRACK8_PARAMETER_CCS[index+24], name = 'Track8_Device4_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track8_parameter5_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK8_PARAMETER_CHANNEL, identifier = TRACK8_PARAMETER_CCS[index+32], name = 'Track8_Device5_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track8_parameter6_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK8_PARAMETER_CHANNEL, identifier = TRACK8_PARAMETER_CCS[index+40], name = 'Track8_Device6_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track8_parameter7_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK8_PARAMETER_CHANNEL, identifier = TRACK8_PARAMETER_CCS[index+48], name = 'Track8_Device7_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._track8_parameter8_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = TRACK8_PARAMETER_CHANNEL, identifier = TRACK8_PARAMETER_CCS[index+56], name = 'Track8_Device8_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-
-		self._selected_track_parameter1_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = SELECTEDTRACK_PARAMETER_CHANNEL, identifier = SELECTEDTRACK_PARAMETER_CCS[index], name = 'SelectedTrack_Device1_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._selected_track_parameter2_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = SELECTEDTRACK_PARAMETER_CHANNEL, identifier = SELECTEDTRACK_PARAMETER_CCS[index+8], name = 'SelectedTrack_Device2_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._selected_track_parameter3_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = SELECTEDTRACK_PARAMETER_CHANNEL, identifier = SELECTEDTRACK_PARAMETER_CCS[index+16], name = 'SelectedTrack_Device3_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._selected_track_parameter4_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = SELECTEDTRACK_PARAMETER_CHANNEL, identifier = SELECTEDTRACK_PARAMETER_CCS[index+24], name = 'SelectedTrack_Device4_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._selected_track_parameter5_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = SELECTEDTRACK_PARAMETER_CHANNEL, identifier = SELECTEDTRACK_PARAMETER_CCS[index+32], name = 'SelectedTrack_Device5_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._selected_track_parameter6_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = SELECTEDTRACK_PARAMETER_CHANNEL, identifier = SELECTEDTRACK_PARAMETER_CCS[index+40], name = 'SelectedTrack_Device6_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._selected_track_parameter7_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = SELECTEDTRACK_PARAMETER_CHANNEL, identifier = SELECTEDTRACK_PARAMETER_CCS[index+48], name = 'SelectedTrack_Device7_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
-		self._selected_track_parameter8_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = SELECTEDTRACK_PARAMETER_CHANNEL, identifier = SELECTEDTRACK_PARAMETER_CCS[index+56], name = 'SelectedTrack_Device8_Parameter_Controls' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(8)]
 
 		self._masterVolume_control = MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = MASTER_VOLUME_CHANNEL, identifier = MASTER_VOLUME_CC, name = 'Master_Volume_Control', num = 0, script = self, optimized_send_midi = optimized, resource_type = resource)
 		self._cueVolume_control = MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = CUE_VOLUME_CHANNEL, identifier = CUE_VOLUME_CC, name = 'Cue_Volume_Control', num = 0, script = self, optimized_send_midi = optimized, resource_type = resource)
@@ -320,87 +271,6 @@ class YaeltexUniversal(ControlSurface):
 		self._track7_parameter_on_off_buttons = ButtonMatrixElement(name = 'Track7_Parameter_OnOff_Matrix', rows = [self._track_parameter_on_off_buttons[48:56]])
 		self._track8_parameter_on_off_buttons = ButtonMatrixElement(name = 'Track8_Parameter_OnOff_Matrix', rows = [self._track_parameter_on_off_buttons[56:64]])
 		self._selected_track_parameter_on_off_buttons = ButtonMatrixElement(name = 'Selected_Track_Parameter_OnOff_Matrix', rows = [self._track_parameter_on_off_buttons[64:72]])
-
-		self._track1_parameter1_control_matrix = ButtonMatrixElement(name = 'Track1_Parameter1_Matrix', rows = [self._track1_parameter1_controls])
-		self._track1_parameter2_control_matrix = ButtonMatrixElement(name = 'Track1_Parameter2_Matrix', rows = [self._track1_parameter2_controls])
-		self._track1_parameter3_control_matrix = ButtonMatrixElement(name = 'Track1_Parameter3_Matrix', rows = [self._track1_parameter3_controls])
-		self._track1_parameter4_control_matrix = ButtonMatrixElement(name = 'Track1_Parameter4_Matrix', rows = [self._track1_parameter4_controls])
-		self._track1_parameter5_control_matrix = ButtonMatrixElement(name = 'Track1_Parameter5_Matrix', rows = [self._track1_parameter5_controls])
-		self._track1_parameter6_control_matrix = ButtonMatrixElement(name = 'Track1_Parameter6_Matrix', rows = [self._track1_parameter6_controls])
-		self._track1_parameter7_control_matrix = ButtonMatrixElement(name = 'Track1_Parameter7_Matrix', rows = [self._track1_parameter7_controls])
-		self._track1_parameter8_control_matrix = ButtonMatrixElement(name = 'Track1_Parameter8_Matrix', rows = [self._track1_parameter8_controls])
-
-		self._track2_parameter1_control_matrix = ButtonMatrixElement(name = 'Track2_Parameter1_Matrix', rows = [self._track2_parameter1_controls])
-		self._track2_parameter2_control_matrix = ButtonMatrixElement(name = 'Track2_Parameter2_Matrix', rows = [self._track2_parameter2_controls])
-		self._track2_parameter3_control_matrix = ButtonMatrixElement(name = 'Track2_Parameter3_Matrix', rows = [self._track2_parameter3_controls])
-		self._track2_parameter4_control_matrix = ButtonMatrixElement(name = 'Track2_Parameter4_Matrix', rows = [self._track2_parameter4_controls])
-		self._track2_parameter5_control_matrix = ButtonMatrixElement(name = 'Track2_Parameter5_Matrix', rows = [self._track2_parameter5_controls])
-		self._track2_parameter6_control_matrix = ButtonMatrixElement(name = 'Track2_Parameter6_Matrix', rows = [self._track2_parameter6_controls])
-		self._track2_parameter7_control_matrix = ButtonMatrixElement(name = 'Track2_Parameter7_Matrix', rows = [self._track2_parameter7_controls])
-		self._track2_parameter8_control_matrix = ButtonMatrixElement(name = 'Track2_Parameter8_Matrix', rows = [self._track2_parameter8_controls])
-
-		self._track3_parameter1_control_matrix = ButtonMatrixElement(name = 'Track3_Parameter1_Matrix', rows = [self._track3_parameter1_controls])
-		self._track3_parameter2_control_matrix = ButtonMatrixElement(name = 'Track3_Parameter2_Matrix', rows = [self._track3_parameter2_controls])
-		self._track3_parameter3_control_matrix = ButtonMatrixElement(name = 'Track3_Parameter3_Matrix', rows = [self._track3_parameter3_controls])
-		self._track3_parameter4_control_matrix = ButtonMatrixElement(name = 'Track3_Parameter4_Matrix', rows = [self._track3_parameter4_controls])
-		self._track3_parameter5_control_matrix = ButtonMatrixElement(name = 'Track3_Parameter5_Matrix', rows = [self._track3_parameter5_controls])
-		self._track3_parameter6_control_matrix = ButtonMatrixElement(name = 'Track3_Parameter6_Matrix', rows = [self._track3_parameter6_controls])
-		self._track3_parameter7_control_matrix = ButtonMatrixElement(name = 'Track3_Parameter7_Matrix', rows = [self._track3_parameter7_controls])
-		self._track3_parameter8_control_matrix = ButtonMatrixElement(name = 'Track3_Parameter8_Matrix', rows = [self._track3_parameter8_controls])
-
-		self._track4_parameter1_control_matrix = ButtonMatrixElement(name = 'Track4_Parameter1_Matrix', rows = [self._track4_parameter1_controls])
-		self._track4_parameter2_control_matrix = ButtonMatrixElement(name = 'Track4_Parameter2_Matrix', rows = [self._track4_parameter2_controls])
-		self._track4_parameter3_control_matrix = ButtonMatrixElement(name = 'Track4_Parameter3_Matrix', rows = [self._track4_parameter3_controls])
-		self._track4_parameter4_control_matrix = ButtonMatrixElement(name = 'Track4_Parameter4_Matrix', rows = [self._track4_parameter4_controls])
-		self._track4_parameter5_control_matrix = ButtonMatrixElement(name = 'Track4_Parameter5_Matrix', rows = [self._track4_parameter5_controls])
-		self._track4_parameter6_control_matrix = ButtonMatrixElement(name = 'Track4_Parameter6_Matrix', rows = [self._track4_parameter6_controls])
-		self._track4_parameter7_control_matrix = ButtonMatrixElement(name = 'Track4_Parameter7_Matrix', rows = [self._track4_parameter7_controls])
-		self._track4_parameter8_control_matrix = ButtonMatrixElement(name = 'Track4_Parameter8_Matrix', rows = [self._track4_parameter8_controls])
-
-		self._track5_parameter1_control_matrix = ButtonMatrixElement(name = 'Track5_Parameter1_Matrix', rows = [self._track5_parameter1_controls])
-		self._track5_parameter2_control_matrix = ButtonMatrixElement(name = 'Track5_Parameter2_Matrix', rows = [self._track5_parameter2_controls])
-		self._track5_parameter3_control_matrix = ButtonMatrixElement(name = 'Track5_Parameter3_Matrix', rows = [self._track5_parameter3_controls])
-		self._track5_parameter4_control_matrix = ButtonMatrixElement(name = 'Track5_Parameter4_Matrix', rows = [self._track5_parameter4_controls])
-		self._track5_parameter5_control_matrix = ButtonMatrixElement(name = 'Track5_Parameter5_Matrix', rows = [self._track5_parameter5_controls])
-		self._track5_parameter6_control_matrix = ButtonMatrixElement(name = 'Track5_Parameter6_Matrix', rows = [self._track5_parameter6_controls])
-		self._track5_parameter7_control_matrix = ButtonMatrixElement(name = 'Track5_Parameter7_Matrix', rows = [self._track5_parameter7_controls])
-		self._track5_parameter8_control_matrix = ButtonMatrixElement(name = 'Track5_Parameter8_Matrix', rows = [self._track5_parameter8_controls])
-
-		self._track6_parameter1_control_matrix = ButtonMatrixElement(name = 'Track6_Parameter1_Matrix', rows = [self._track6_parameter1_controls])
-		self._track6_parameter2_control_matrix = ButtonMatrixElement(name = 'Track6_Parameter2_Matrix', rows = [self._track6_parameter2_controls])
-		self._track6_parameter3_control_matrix = ButtonMatrixElement(name = 'Track6_Parameter3_Matrix', rows = [self._track6_parameter3_controls])
-		self._track6_parameter4_control_matrix = ButtonMatrixElement(name = 'Track6_Parameter4_Matrix', rows = [self._track6_parameter4_controls])
-		self._track6_parameter5_control_matrix = ButtonMatrixElement(name = 'Track6_Parameter5_Matrix', rows = [self._track6_parameter5_controls])
-		self._track6_parameter6_control_matrix = ButtonMatrixElement(name = 'Track6_Parameter6_Matrix', rows = [self._track6_parameter6_controls])
-		self._track6_parameter7_control_matrix = ButtonMatrixElement(name = 'Track6_Parameter7_Matrix', rows = [self._track6_parameter7_controls])
-		self._track6_parameter8_control_matrix = ButtonMatrixElement(name = 'Track6_Parameter8_Matrix', rows = [self._track6_parameter8_controls])
-
-		self._track7_parameter1_control_matrix = ButtonMatrixElement(name = 'Track7_Parameter1_Matrix', rows = [self._track7_parameter1_controls])
-		self._track7_parameter2_control_matrix = ButtonMatrixElement(name = 'Track7_Parameter2_Matrix', rows = [self._track7_parameter2_controls])
-		self._track7_parameter3_control_matrix = ButtonMatrixElement(name = 'Track7_Parameter3_Matrix', rows = [self._track7_parameter3_controls])
-		self._track7_parameter4_control_matrix = ButtonMatrixElement(name = 'Track7_Parameter4_Matrix', rows = [self._track7_parameter4_controls])
-		self._track7_parameter5_control_matrix = ButtonMatrixElement(name = 'Track7_Parameter5_Matrix', rows = [self._track7_parameter5_controls])
-		self._track7_parameter6_control_matrix = ButtonMatrixElement(name = 'Track7_Parameter6_Matrix', rows = [self._track7_parameter6_controls])
-		self._track7_parameter7_control_matrix = ButtonMatrixElement(name = 'Track7_Parameter7_Matrix', rows = [self._track7_parameter7_controls])
-		self._track7_parameter8_control_matrix = ButtonMatrixElement(name = 'Track7_Parameter8_Matrix', rows = [self._track7_parameter8_controls])
-
-		self._track8_parameter1_control_matrix = ButtonMatrixElement(name = 'Track8_Parameter1_Matrix', rows = [self._track8_parameter1_controls])
-		self._track8_parameter2_control_matrix = ButtonMatrixElement(name = 'Track8_Parameter2_Matrix', rows = [self._track8_parameter2_controls])
-		self._track8_parameter3_control_matrix = ButtonMatrixElement(name = 'Track8_Parameter3_Matrix', rows = [self._track8_parameter3_controls])
-		self._track8_parameter4_control_matrix = ButtonMatrixElement(name = 'Track8_Parameter4_Matrix', rows = [self._track8_parameter4_controls])
-		self._track8_parameter5_control_matrix = ButtonMatrixElement(name = 'Track8_Parameter5_Matrix', rows = [self._track8_parameter5_controls])
-		self._track8_parameter6_control_matrix = ButtonMatrixElement(name = 'Track8_Parameter6_Matrix', rows = [self._track8_parameter6_controls])
-		self._track8_parameter7_control_matrix = ButtonMatrixElement(name = 'Track8_Parameter7_Matrix', rows = [self._track8_parameter7_controls])
-		self._track8_parameter8_control_matrix = ButtonMatrixElement(name = 'Track8_Parameter8_Matrix', rows = [self._track8_parameter8_controls])
-
-		self._selected_track_parameter1_control_matrix = ButtonMatrixElement(name = 'SelectedTrack_Parameter1_Matrix', rows = [self._selected_track_parameter1_controls])
-		self._selected_track_parameter2_control_matrix = ButtonMatrixElement(name = 'SelectedTrack_Parameter2_Matrix', rows = [self._selected_track_parameter2_controls])
-		self._selected_track_parameter3_control_matrix = ButtonMatrixElement(name = 'SelectedTrack_Parameter3_Matrix', rows = [self._selected_track_parameter3_controls])
-		self._selected_track_parameter4_control_matrix = ButtonMatrixElement(name = 'SelectedTrack_Parameter4_Matrix', rows = [self._selected_track_parameter4_controls])
-		self._selected_track_parameter5_control_matrix = ButtonMatrixElement(name = 'SelectedTrack_Parameter5_Matrix', rows = [self._selected_track_parameter5_controls])
-		self._selected_track_parameter6_control_matrix = ButtonMatrixElement(name = 'SelectedTrack_Parameter6_Matrix', rows = [self._selected_track_parameter6_controls])
-		self._selected_track_parameter7_control_matrix = ButtonMatrixElement(name = 'SelectedTrack_Parameter7_Matrix', rows = [self._selected_track_parameter7_controls])
-		self._selected_track_parameter8_control_matrix = ButtonMatrixElement(name = 'SelectedTrack_Parameter8_Matrix', rows = [self._selected_track_parameter8_controls])
 
 		self._return_volume_control_matrix = ButtonMatrixElement(name = 'ReturnVolumeControlMatrix', rows = [self._return_volume_controls])
 
@@ -486,91 +356,32 @@ class YaeltexUniversal(ControlSurface):
 		self._mixer.master_strip().set_volume_control(self._masterVolume_control)
 		self._mixer.set_prehear_volume_control(self._cueVolume_control)
 
-		if USE_STRIP_PARAMETER_CONTROLS:
+		LayerNames = ['parameter_controls', 'parameter_controls2', 'parameter_controls3', 'parameter_controls4', 'parameter_controls5', 'parameter_controls6', 'parameter_controls7', 'parameter_controls8']
+
+		if SELECTED_STRIP_PARAMETER_CONTROLS_ENABLED:
+			def make_selected_track_parameter_control_layer(instance):
+				kw = {'parameter_controls_on_off_buttons':getattr(instance, '_selected_track_parameter_on_off_buttons')}
+				for device_index in range(8):
+					if STRIP_PARAM_CONTROLS_ENABLED_FLAGS[device_index]:
+						kw[LayerNames[device_index]] = getattr(instance, '_selected_track_parameter'+str(device_index+1)+'_control_matrix')
+				return kw
+
 			self._selected_strip = self._mixer.selected_strip()
-			self._selected_strip.layer = Layer(parameter_controls_on_off_buttons = self._selected_track_parameter_on_off_buttons,
-											parameter_controls = self._selected_track_parameter1_control_matrix,
-											parameter_controls2 = self._selected_track_parameter2_control_matrix,
-											parameter_controls3 = self._selected_track_parameter3_control_matrix,
-											parameter_controls4 = self._selected_track_parameter4_control_matrix,
-											parameter_controls5 = self._selected_track_parameter5_control_matrix,
-											parameter_controls6 = self._selected_track_parameter6_control_matrix,
-											parameter_controls7 = self._selected_track_parameter7_control_matrix,
-											parameter_controls8 = self._selected_track_parameter8_control_matrix,)
+			strip_layer = make_selected_track_parameter_control_layer(instance=self)
+			self._selected_strip.layer = Layer(strip_layer)
+
+		if TRACK_STRIP_PARAMETER_CONTROLS_ENABLED:
+			def make_parameter_control_layer(instance, track_index):
+				kw = {'parameter_controls_on_off_buttons':getattr(instance, '_track'+str(track_index+1)+'_parameter_on_off_buttons')}
+				for device_index in range(8):
+					if STRIP_PARAM_CONTROLS_ENABLED_FLAGS[device_index]:
+						kw[LayerNames[device_index]] = getattr(instance, '_track'+str(track_index+1)+'_parameter'+str(device_index+1)+'_control_matrix')
+				return kw
 
 			self._strip = [self._mixer.channel_strip(index) for index in range(8)]
-			self._strip[0].layer = Layer(parameter_controls_on_off_buttons = self._track1_parameter_on_off_buttons,
-											parameter_controls = self._track1_parameter1_control_matrix,
-											parameter_controls2 = self._track1_parameter2_control_matrix,
-											parameter_controls3 = self._track1_parameter3_control_matrix,
-											parameter_controls4 = self._track1_parameter4_control_matrix,
-											parameter_controls5 = self._track1_parameter5_control_matrix,
-											parameter_controls6 = self._track1_parameter6_control_matrix,
-											parameter_controls7 = self._track1_parameter7_control_matrix,
-											parameter_controls8 = self._track1_parameter8_control_matrix,)
-			self._strip[1].layer = Layer(parameter_controls_on_off_buttons = self._track2_parameter_on_off_buttons,
-											parameter_controls = self._track2_parameter1_control_matrix,
-											parameter_controls2 = self._track2_parameter2_control_matrix,
-											parameter_controls3 = self._track2_parameter3_control_matrix,
-											parameter_controls4 = self._track2_parameter4_control_matrix,
-											parameter_controls5 = self._track2_parameter5_control_matrix,
-											parameter_controls6 = self._track2_parameter6_control_matrix,
-											parameter_controls7 = self._track2_parameter7_control_matrix,
-											parameter_controls8 = self._track2_parameter8_control_matrix,)
-			self._strip[2].layer = Layer(parameter_controls_on_off_buttons = self._track3_parameter_on_off_buttons,
-											parameter_controls = self._track3_parameter1_control_matrix,
-											parameter_controls2 = self._track3_parameter2_control_matrix,
-											parameter_controls3 = self._track3_parameter3_control_matrix,
-											parameter_controls4 = self._track3_parameter4_control_matrix,
-											parameter_controls5 = self._track3_parameter5_control_matrix,
-											parameter_controls6 = self._track3_parameter6_control_matrix,
-											parameter_controls7 = self._track3_parameter7_control_matrix,
-											parameter_controls8 = self._track3_parameter8_control_matrix,)
-			self._strip[3].layer = Layer(parameter_controls_on_off_buttons = self._track4_parameter_on_off_buttons,
-											parameter_controls = self._track4_parameter1_control_matrix,
-											parameter_controls2 = self._track4_parameter2_control_matrix,
-											parameter_controls3 = self._track4_parameter3_control_matrix,
-											parameter_controls4 = self._track4_parameter4_control_matrix,
-											parameter_controls5 = self._track4_parameter5_control_matrix,
-											parameter_controls6 = self._track4_parameter6_control_matrix,
-											parameter_controls7 = self._track4_parameter7_control_matrix,
-											parameter_controls8 = self._track4_parameter8_control_matrix,)
-			self._strip[4].layer = Layer(parameter_controls_on_off_buttons = self._track5_parameter_on_off_buttons,
-											parameter_controls = self._track5_parameter1_control_matrix,
-											parameter_controls2 = self._track5_parameter2_control_matrix,
-											parameter_controls3 = self._track5_parameter3_control_matrix,
-											parameter_controls4 = self._track5_parameter4_control_matrix,
-											parameter_controls5 = self._track5_parameter5_control_matrix,
-											parameter_controls6 = self._track5_parameter6_control_matrix,
-											parameter_controls7 = self._track5_parameter7_control_matrix,
-											parameter_controls8 = self._track5_parameter8_control_matrix,)
-			self._strip[5].layer = Layer(parameter_controls_on_off_buttons = self._track6_parameter_on_off_buttons,
-											parameter_controls = self._track6_parameter1_control_matrix,
-											parameter_controls2 = self._track6_parameter2_control_matrix,
-											parameter_controls3 = self._track6_parameter3_control_matrix,
-											parameter_controls4 = self._track6_parameter4_control_matrix,
-											parameter_controls5 = self._track6_parameter5_control_matrix,
-											parameter_controls6 = self._track6_parameter6_control_matrix,
-											parameter_controls7 = self._track6_parameter7_control_matrix,
-											parameter_controls8 = self._track6_parameter8_control_matrix,)
-			self._strip[6].layer = Layer(parameter_controls_on_off_buttons = self._track7_parameter_on_off_buttons,
-											parameter_controls = self._track7_parameter1_control_matrix,
-											parameter_controls2 = self._track7_parameter2_control_matrix,
-											parameter_controls3 = self._track7_parameter3_control_matrix,
-											parameter_controls4 = self._track7_parameter4_control_matrix,
-											parameter_controls5 = self._track7_parameter5_control_matrix,
-											parameter_controls6 = self._track7_parameter6_control_matrix,
-											parameter_controls7 = self._track7_parameter7_control_matrix,
-											parameter_controls8 = self._track7_parameter8_control_matrix,)
-			self._strip[7].layer = Layer(parameter_controls_on_off_buttons = self._track8_parameter_on_off_buttons,
-											parameter_controls = self._track8_parameter1_control_matrix,
-											parameter_controls2 = self._track8_parameter2_control_matrix,
-											parameter_controls3 = self._track8_parameter3_control_matrix,
-											parameter_controls4 = self._track8_parameter4_control_matrix,
-											parameter_controls5 = self._track8_parameter5_control_matrix,
-											parameter_controls6 = self._track8_parameter6_control_matrix,
-											parameter_controls7 = self._track8_parameter7_control_matrix,
-											parameter_controls8 = self._track8_parameter8_control_matrix,)
+			for strip_index in range(8):
+				strip_layer = make_parameter_control_layer(instance=self, track_index=strip_index)
+				self._strip[strip_index].layer = Layer(**strip_layer)
 
 		self._mixer.layer = Layer(priority = 4,
 			volume_controls = self._volume_control_matrix,
