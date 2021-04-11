@@ -331,7 +331,7 @@ class MonoChannelStripComponent(ChannelStripComponentBase):
 				else:
 					self._crossfade_toggle.set_light(self._xfade_off_color)
 			else:
-				self._crossfade_toggle.turn_off()
+				self._crossfade_toggle.set_light(False)
 			#debug('xfade toggle is:', self._track.mixer_device.crossfade_assign)
 
 

@@ -7,7 +7,7 @@ from .colors import *
 
 VU_METER_LOG_SCALING = False
 
-SESSION_BOX_SIZE = (16, 8)  #maximum size for this is 16 tracks x 8 scenes
+SESSION_BOX_SIZE = (8, 8)  #maximum size for this is 16 tracks x 8 scenes
 
 MUTE_NOTES = list(range(16))
 MUTE_CHANNEL = 0
@@ -82,6 +82,8 @@ TRACK_PARAMETER_CHANNELS = [TRACK1_PARAMETER_CHANNEL,
 SELECTEDTRACK_PARAMETER_CCS = list(range(0, 64))
 
 SELECTEDTRACK_PARAMETER_CHANNEL = 10
+
+NUM_SEND_CONTROLS = 2
 
 SENDA_CCS = list(range(16))
 SENDA_CHANNEL = 1

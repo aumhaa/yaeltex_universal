@@ -11,7 +11,7 @@ from itertools import chain, starmap
 
 from ableton.v2.base import inject, listens, listens_group, nop
 from ableton.v2.control_surface import ControlSurface, ControlElement, Layer, Skin, PrioritizedResource, Component, ClipCreator, DeviceBankRegistry
-from ableton.v2.control_surface.elements import ComboElement, ButtonMatrixElement, DoublePressElement, MultiElement, DisplayDataSource, SysexElement
+from ableton.v2.control_surface.elements import EncoderElement, ComboElement, ButtonMatrixElement, DoublePressElement, MultiElement, DisplayDataSource, SysexElement
 from ableton.v2.control_surface.components import ClipSlotComponent, SceneComponent, SessionComponent, TransportComponent, BackgroundComponent, ViewControlComponent, SessionRingComponent, SessionRecordingComponent, SessionNavigationComponent, MixerComponent, PlayableComponent
 from ableton.v2.control_surface.components.mixer import SimpleTrackAssigner
 from ableton.v2.control_surface.control import control_color
@@ -29,7 +29,6 @@ from .mono_encoder import MonoEncoderElement
 from .debug import initialize_debug
 logger = logging.getLogger(__name__)
 debug = initialize_debug()
-
 
 # DEBUG = False
 # try:
@@ -138,6 +137,54 @@ class SpecialTransportComponent(TransportComponent):
 		self.song.tap_tempo()
 
 
+class MonoEncoderElement(EncoderElement):
+
+	def __init__(self, name = 'MonoEncoder', num = 0, script = None, mapping_feedback_delay = 1, monobridge = None, *a, **k):
+		super(MonoEncoderElement, self).__init__(map_mode=Live.MidiMap.MapMode.absolute, *a, **k)
+
+
+class MonoButtonElement(ButtonElement):
+
+	def __init__(self, name = 'MonoButton', script = None, color_map = None, monobridge = None, *a, **k):
+		super(MonoButtonElement, self).__init__(name = name, *a, **k)
+		# self._color_map = color_map or [2, 64, 4, 8, 16, 127, 32]
+# 		self._num_colors = 7
+# 		self._num_flash_states = 18
+# 		self._flash_state = 0
+# 		self._color = 0
+# 		self._on_value = 127
+# 		self._off_value = 0
+# 		self._darkened = 0
+# 		self._is_enabled = True
+#
+	# def turn_on(self, force = False):
+	# 	self.force_next_send()
+	# 	if self._on_value in range(0, 128):
+	# 		self.send_value(self._on_value)
+	# 	else:
+	# 		try:
+	# 			color = self._skin[self._on_value]
+	# 			color.draw(self)
+	# 		except SkinColorMissingError:
+	# 			#super(MonoButtonElement, self).turn_on()
+	# 			debug('skin color missing', self._on_value)
+	# 			self.send_value(127)
+	#
+	#
+	# def turn_off(self, force = False):
+	# 	self.force_next_send()
+	# 	#debug('turn off:', self._off_value)
+	# 	if self._off_value in range(0, 128):
+	# 		self.send_value(self._off_value)
+	# 	else:
+	# 		try:
+	# 			color = self._skin[self._off_value]
+	# 			color.draw(self)
+	# 		except SkinColorMissingError:
+	# 			#super(MonoButtonElement, self).turn_off()
+	# 			debug('skin color missing', self._off_value)
+	# 			self.send_value(0)
+
 
 class YaeltexUniversal(ControlSurface):
 
@@ -155,8 +202,9 @@ class YaeltexUniversal(ControlSurface):
 			self._setup_transport_control()
 			self._setup_device_control()
 			# self._setup_session_recording_component()
-			self._setup_main_modes()
-		self._main_modes.set_enabled(True)
+			# self._setup_main_modes()
+		# self._main_modes.selected_mode = 'Main'
+		# self._main_modes.set_enabled(True)
 
 
 	def _setup_controls(self):
@@ -200,6 +248,7 @@ class YaeltexUniversal(ControlSurface):
 		self._sendF_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = SENDF_CHANNEL, identifier = SENDF_CCS[index], name = 'SendF_Control_' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(len(SENDF_CCS))]
 		self._sendG_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = SENDG_CHANNEL, identifier = SENDG_CCS[index], name = 'SendG_Control_' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(len(SENDG_CCS))]
 		self._sendH_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = SENDH_CHANNEL, identifier = SENDH_CCS[index], name = 'SendH_Control_' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(len(SENDH_CCS))]
+
 		self._return_volume_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = RETURN_VOLUME_CHANNEL, identifier = RETURN_VOLUME_CCS[index], name = 'Return_Volume_Control_' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(len(RETURN_VOLUME_CCS))]
 
 		self._track_parameter_on_off_buttons  = [MonoButtonElement(is_momentary = is_momentary, msg_type = MIDI_NOTE_TYPE, channel = TRACK_PARAMETER_ON_OFF_CHANNEL, identifier = TRACK_PARAMETER_ON_OFF_NOTES[index], name = 'TrackParameterOnOff_Button_' + str(index), script = self, skin = self._skin, optimized_send_midi = optimized, resource_type = resource) for index in range(len(TRACK_PARAMETER_ON_OFF_NOTES))]
@@ -301,18 +350,6 @@ class YaeltexUniversal(ControlSurface):
 		self._crossfade_assign_button_matrix = ButtonMatrixElement(name = 'CrossfadeAssignMatrix', rows = [self._crossfade_assign_buttons])
 
 
-	def _setup_background(self):
-		self._background = BackgroundComponent(name = 'Background')
-		self._background.layer = Layer(priority = 0, fader_matrix = self._fader_matrix,
-													top_buttons = self._top_buttons,
-													bottom_buttons = self._bottom_buttons,
-													dial_matrix = self._dial_matrix,
-													side_dial_matrix = self._side_dial_matrix,
-													encoder_button_matrix = self._encoder_button_matrix,
-													grid_matrix = self._grid_matrix)
-		self._background.set_enabled(True)
-
-
 	def _setup_autoarm(self):
 		self._auto_arm = AutoArmComponent(name='Auto_Arm')
 		self._auto_arm.can_auto_arm_track = self._can_auto_arm_track
@@ -323,13 +360,9 @@ class YaeltexUniversal(ControlSurface):
 
 
 	def _setup_session_control(self):
-		self._session_ring = SessionRingComponent(num_tracks = 16, num_scenes = 8, tracks_to_use = self._tracks_to_use, set_session_highlight = nop)
-		self._session_ring._session_ring.callback = nop
+		self._session_ring = SessionRingComponent(num_tracks = SESSION_BOX_SIZE[0], num_scenes = SESSION_BOX_SIZE[1], tracks_to_use = self._tracks_to_use)
+		# self._session_ring._session_ring.callback = nop
 		self._session_ring.set_enabled(True)
-
-		self._visible_session_ring = SpecialSessionRingComponent(num_tracks = SESSION_BOX_SIZE[0], num_scenes = SESSION_BOX_SIZE[1], tracks_to_use = self._tracks_to_use)
-		self._visible_session_ring.set_linked_session_ring(self._session_ring)
-		self._visible_session_ring.set_enabled(True)
 
 		self._session_navigation = SpecialSessionNavigationComponent(name = 'SessionNavigation', session_ring = self._session_ring)
 		self._session_navigation._vertical_banking.scroll_up_button.color = 'Session.NavigationButtonOn'
@@ -337,22 +370,22 @@ class YaeltexUniversal(ControlSurface):
 		self._session_navigation._horizontal_banking.scroll_up_button.color = 'Session.NavigationButtonOn'
 		self._session_navigation._horizontal_banking.scroll_down_button.color = 'Session.NavigationButtonOn'
 		self._session_navigation.layer = Layer(priority = 4, up_button = self._session_nav_up, down_button = self._session_nav_down, left_button = self._session_nav_left, right_button = self._session_nav_right)
-		self._session_navigation.set_enabled(False)
+		self._session_navigation.set_enabled(True)
 
 		self._session = SpecialSessionComponent(session_ring = self._session_ring, auto_name = True)
-		# hasattr(self._session, '_enable_skinning') and self._session._enable_skinning()
 		self._session.layer = Layer(priority = 4,
-			clip_launch_buttons = self._cliplaunch_button_matrix,
-			stop_track_clip_buttons = self._clipstop_button_matrix,
+			clip_launch_buttons = self._cliplaunch_button_matrix.submatrix[:SESSION_BOX_SIZE[0], :SESSION_BOX_SIZE[1]],
+			stop_track_clip_buttons = self._clipstop_button_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
 			stop_all_clips_button = self._all_clipstop_button,
-			scene_launch_buttons = self._scenelaunch_button_matrix)
+			scene_launch_buttons = self._scenelaunch_button_matrix.submatrix[:SESSION_BOX_SIZE[0],:])
 		# self._session.clips_layer = AddLayerMode(self._session, Layer(priority = 4, clip_launch_buttons = self._top_buttons, stop_track_clip_buttons = self._bottom_buttons))
-		self._session.set_enabled(False)
+		self._session.set_enabled(True)
 
 
 	def _setup_mixer_control(self):
 
 		self._mixer = MonoMixerComponent(name = 'Mixer', num_returns = 8, tracks_provider = self._session_ring, track_assigner = SimpleTrackAssigner(), invert_mute_feedback = True, auto_name = True, enable_skinning = True, channel_strip_component_type=MonoChannelStripComponent)
+		self._mixer.set_enabled(False)
 		self._mixer.master_strip().set_volume_control(self._masterVolume_control)
 		self._mixer.set_prehear_volume_control(self._cueVolume_control)
 
@@ -368,7 +401,7 @@ class YaeltexUniversal(ControlSurface):
 
 			self._selected_strip = self._mixer.selected_strip()
 			strip_layer = make_selected_track_parameter_control_layer(instance=self)
-			self._selected_strip.layer = Layer(strip_layer)
+			self._selected_strip.layer = Layer(**strip_layer)
 
 		if TRACK_STRIP_PARAMETER_CONTROLS_ENABLED:
 			def make_parameter_control_layer(instance, track_index):
@@ -378,24 +411,26 @@ class YaeltexUniversal(ControlSurface):
 						kw[LayerNames[device_index]] = getattr(instance, '_track'+str(track_index+1)+'_parameter'+str(device_index+1)+'_control_matrix')
 				return kw
 
-			self._strip = [self._mixer.channel_strip(index) for index in range(8)]
-			for strip_index in range(8):
+			self._strip = [self._mixer.channel_strip(index) for index in range(min(SESSION_BOX_SIZE[0], 8))]
+			for strip_index in range(len(self._strip)):
 				strip_layer = make_parameter_control_layer(instance=self, track_index=strip_index)
 				self._strip[strip_index].layer = Layer(**strip_layer)
 
+
 		self._mixer.layer = Layer(priority = 4,
-			volume_controls = self._volume_control_matrix,
-			summed_output_meter_level_controls = self._output_meter_sum_matrix,
-			mute_buttons = self._mute_button_matrix,
-			arm_buttons = self._arm_button_matrix,
-			solo_buttons = self._solo_button_matrix,
-			track_select_buttons = self._select_button_matrix,
-			pan_controls = self._pan_control_matrix,
-			send_controls = self._send_control_matrix,
-			return_controls = self._return_volume_control_matrix,
+			volume_controls = self._volume_control_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
+			summed_output_meter_level_controls = self._output_meter_sum_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
+			mute_buttons = self._mute_button_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
+			arm_buttons = self._arm_button_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
+			solo_buttons = self._solo_button_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
+			track_select_buttons = self._select_button_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
+			pan_controls = self._pan_control_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
+			return_controls = self._return_volume_control_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
 			crossfader_control = self._crossfader_control,
 			prehear_volume_control = self._cueVolume_control,
-			crossfade_toggles = self._crossfade_assign_button_matrix)
+			crossfade_toggles = self._crossfade_assign_button_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
+			send_controls = self._send_control_matrix.submatrix[:SESSION_BOX_SIZE[0],:NUM_SEND_CONTROLS],)
+
 
 			# output_meter_level_controls = self._output_meter_level_matrix,
 			# output_meter_left_controls = self._output_meter_left_matrix,
@@ -403,7 +438,8 @@ class YaeltexUniversal(ControlSurface):
 
 		self._mixer.master_strip().layer = Layer(volume_control = self._masterVolume_control)
 
-		self._mixer.set_enabled(False)
+		self._mixer.set_enabled(True)
+		self._mixer._selected_strip.set_enabled(True)
 
 
 	def _setup_transport_control(self):
@@ -419,28 +455,29 @@ class YaeltexUniversal(ControlSurface):
 			tap_tempo_button = self._tap_tempo_button,
 			tempo_control = self._tempo_control,
 			loop_button = self._loop_button)
-		self._transport.set_enabled(False)
+		self._transport.set_enabled(True)
 
 
 	def _setup_device_control(self):
 		self._device = DeviceComponent(name = 'Device_Component', device_provider = self._device_provider, device_bank_registry = DeviceBankRegistry())
 		self._device.layer = Layer(priority = 4, parameter_controls = self._parameter_control_matrix, on_off_button = self._parameter_on_off_button)
-		self._device.set_enabled(False)
+		self._device.set_enabled(True)
 
 
-	def _setup_session_recording_component(self):
-		self._clip_creator = ClipCreator()
-		self._clip_creator.name = 'ClipCreator'
-		self._recorder = SessionRecordingComponent(ViewControlComponent())
-		self._recorder.set_enabled(True)
-		self._recorder.layer = Layer(priority = 4, automation_button = self._grid[1][2], record_button  = self._grid[2][1],)
+	# def _setup_session_recording_component(self):
+	# 	self._clip_creator = ClipCreator()
+	# 	self._clip_creator.name = 'ClipCreator'
+	# 	self._recorder = SessionRecordingComponent(ViewControlComponent())
+	# 	self._recorder.set_enabled(True)
+	# 	self._recorder.layer = Layer(priority = 4, automation_button = self._grid[1][2], record_button  = self._grid[2][1],)
 
 
 	def _setup_main_modes(self):
 		self._main_modes = ModesComponent(name = 'MainModes')
-		self._main_modes.add_mode('Main', [self._device, self._session, self._session_navigation, self._mixer, self._transport])
+		self._main_modes.add_mode('disabled', [])
+		self._main_modes.add_mode('Main', [self._device, self._session, self._session_navigation, self._mixer, self._mixer._selected_strip, self._transport])
 		self._main_modes.layer = Layer(priority = 4)
-		self._main_modes.selected_mode = 'Main'
+		self._main_modes.selected_mode = 'disabled'
 		self._main_modes.set_enabled(True)
 
 
