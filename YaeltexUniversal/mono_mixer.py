@@ -4,7 +4,16 @@
 
 import Live
 import math
-from itertools import zip_longest, product, chain
+import sys
+
+PVERS = sys.version_info.major
+
+if PVERS>=3:
+    from itertools import zip_longest
+else:
+    from itertools import izip_longest as zip_longest
+
+from itertools import product, chain
 from ableton.v2.base import listens, listens_group, EventObject, liveobj_valid, nop, clamp, listenable_property, liveobj_changed
 import ableton.v2.base.task as Task
 from ableton.v2.control_surface import DeviceBankRegistry

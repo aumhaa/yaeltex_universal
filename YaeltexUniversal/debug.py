@@ -7,8 +7,13 @@
 import Live
 import logging
 import sys
-import builtins
 import functools
+
+if sys.version_info.major >= 3:
+	import builtins
+	from ableton.v2.base import old_hasattr
+else:
+	old_hasattr = hasattr
 
 import os #, __builtin__, __main__, _ast, _codecs, _functools, _md5, _random, _sha, _sha256, _sha512, _socket, _sre, _ssl, _struct, _symtable, _weakref, binascii, cStringIO, collections, datetime, errno, exceptions, gc, imp, itertools, marshal, math, sys, time
 
@@ -18,7 +23,8 @@ modules = []
 
 from re import *
 
-from ableton.v2.base import old_hasattr
+
+
 from ableton.v2.control_surface.control_surface import *
 from ableton.v2.control_surface.component import Component as ControlSurfaceComponent
 
