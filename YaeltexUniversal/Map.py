@@ -6,8 +6,9 @@ from ableton.v2.control_surface.elements.color import Color
 from .colors import *
 
 VU_METER_LOG_SCALING = False
+VU_METER_ENABLED = True
 
-SESSION_BOX_SIZE = (8, 8)  #maximum size for this is 16 tracks x 8 scenes
+SESSION_BOX_SIZE = (16, 8)  #maximum size for this is 16 tracks x 8 scenes
 
 MUTE_NOTES = list(range(16))
 MUTE_CHANNEL = 0
@@ -18,10 +19,10 @@ SOLO_CHANNEL = 0
 ARM_NOTES = list(range(32, 48))
 ARM_CHANNEL = 0
 
-SELECT_NOTES = list(range(48, 60))
+SELECT_NOTES = list(range(48, 64))
 SELECT_CHANNEL = 0
 
-CROSSFADE_ASSIGN_NOTES = list(range(60,76))
+CROSSFADE_ASSIGN_NOTES = list(range(64,80))
 CROSSFADE_ASSIGN_CHANNEL = 0
 
 VOLUME_CCS = list(range(16))
@@ -175,127 +176,123 @@ STRIP_PARAM_CONTROLS_ENABLED_FLAGS = [STRIP_PARAM1_CONTROLS_ENABLED,
 									STRIP_PARAM7_CONTROLS_ENABLED,
 									STRIP_PARAM8_CONTROLS_ENABLED]
 
-# These color values can easily be set to numerical values:
-#
-#   class TestClass:
-#		Testcolor = MonoColor(64)
 
 
 class YAELTEXColors:
 
 
 	class ModeButtons:
-		Main = LividRGB.WHITE
-		Select = LividRGB.RED
-		Clips = LividRGB.GREEN
+		Main = MonoColor(1)
+		Select = MonoColor(5)
+		Clips = MonoColor(6)
 
 
 	class DefaultButton:
-		On = MonoColor(127)  #LividRGB.WHITE
-		Off = LividRGB.OFF
-		Disabled = LividRGB.OFF
-		Alert = LividRGB.BlinkFast.WHITE
+		On = MonoColor(127)
+		Off = MonoColor(0)
+		Disabled = MonoColor(0)
+		Alert = MonoColor(1)
 
 
 	class Session:
-		StopClipDisabled = LividRGB.OFF
-		StopClipTriggered = LividRGB.BiColor.BLUE.WHITE
-		StopClip = LividRGB.BLUE
-		Scene = LividRGB.CYAN
-		NoScene = LividRGB.OFF
-		SceneTriggered = LividRGB.GREEN
-		ClipTriggeredPlay = LividRGB.BlinkFast.GREEN
-		ClipTriggeredRecord = LividRGB.BlinkFast.RED
-		RecordButton = LividRGB.OFF
-		ClipEmpty = LividRGB.OFF
-		ClipStopped = LividRGB.WHITE
-		ClipStarted = LividRGB.GREEN
-		ClipRecording = LividRGB.RED
-		NavigationButtonOn = LividRGB.CYAN
-		NavigationButtonOff = LividRGB.YELLOW
-		ZoomOn = LividRGB.BlinkFast.WHITE
-		ZoomOff = LividRGB.WHITE
+		StopClipDisabled = MonoColor(0)
+		StopClipTriggered = MonoColor(7)
+		StopClip = MonoColor(7)
+		Scene = MonoColor(3)
+		NoScene = MonoColor(0)
+		SceneTriggered = MonoColor(6)
+		ClipTriggeredPlay = MonoColor(7)
+		ClipTriggeredRecord = MonoColor(5)
+		RecordButton = MonoColor(0)
+		ClipEmpty = MonoColor(0)
+		ClipStopped = MonoColor(1)
+		ClipStarted = MonoColor(6)
+		ClipRecording = MonoColor(5)
+		NavigationButtonOn = MonoColor(3)
+		NavigationButtonOff = MonoColor(2)
+		ZoomOn = MonoColor(1)
+		ZoomOff = MonoColor(7)
 
 
 	class Zooming:
-		Selected = LividRGB.BlinkFast.YELLOW
-		Stopped = LividRGB.WHITE
-		Playing = LividRGB.GREEN
-		Empty = LividRGB.OFF
+		Selected = MonoColor(2)
+		Stopped = MonoColor(1)
+		Playing = MonoColor(6)
+		Empty = MonoColor(0)
 
 
 	class LoopSelector:
-		Playhead = LividRGB.YELLOW
-		OutsideLoop = LividRGB.BLUE
-		InsideLoopStartBar = LividRGB.CYAN
-		SelectedPage = LividRGB.WHITE
-		InsideLoop = LividRGB.CYAN
-		PlayheadRecord = LividRGB.RED
+		Playhead = MonoColor(2)
+		OutsideLoop = MonoColor(7)
+		InsideLoopStartBar = MonoColor(3)
+		SelectedPage = MonoColor(1)
+		InsideLoop = MonoColor(3)
+		PlayheadRecord = MonoColor(5)
 
 
 	class Transport:
-		PlayOn = LividRGB.BiColor.WHITE.GREEN
-		PlayOff = LividRGB.GREEN
-		StopOn = LividRGB.BLUE
-		StopOff = LividRGB.BLUE
-		RecordOn = LividRGB.BiColor.WHITE.RED
-		RecordOff = LividRGB.RED
-		OverdubOn = LividRGB.BiColor.WHITE.MAGENTA
-		OverdubOff = LividRGB.MAGENTA
-		SeekBackwardOn = LividRGB.BlinkMedium.CYAN
-		SeekBackwardOff = LividRGB.CYAN
-		LoopOn = LividRGB.BlinkMedium.YELLOW
-		LoopOff = LividRGB.YELLOW
+		PlayOn = MonoColor(6)
+		PlayOff = MonoColor(6)
+		StopOn = MonoColor(7)
+		StopOff = MonoColor(7)
+		RecordOn = MonoColor(5)
+		RecordOff = MonoColor(5)
+		OverdubOn = MonoColor(4)
+		OverdubOff = MonoColor(4)
+		SeekBackwardOn = MonoColor(3)
+		SeekBackwardOff = MonoColor(3)
+		LoopOn = MonoColor(2)
+		LoopOff = MonoColor(2)
 
 
 	class Mixer:
-		SoloOn = LividRGB.BLUE
-		SoloOff = LividRGB.CYAN
-		MuteOn = LividRGB.YELLOW
-		MuteOff = LividRGB.WHITE
-		ArmSelected = LividRGB.RED
-		ArmUnselected = LividRGB.RED
-		ArmOff = LividRGB.GREEN
-		StopClip = LividRGB.BLUE
-		SelectedOn = LividRGB.BLUE
-		SelectedOff = LividRGB.MAGENTA
-		XFadeOff = LividRGB.OFF
-		XFadeAOn = LividRGB.YELLOW
-		XFadeBOn = LividRGB.MAGENTA
+		SoloOn = MonoColor(7)
+		SoloOff = MonoColor(3)
+		MuteOn = MonoColor(2)
+		MuteOff = MonoColor(1)
+		ArmSelected = MonoColor(5)
+		ArmUnselected = MonoColor(5)
+		ArmOff = MonoColor(6)
+		StopClip = MonoColor(7)
+		SelectedOn = MonoColor(7)
+		SelectedOff = MonoColor(4)
+		XFadeOff = MonoColor(0)
+		XFadeAOn = MonoColor(2)
+		XFadeBOn = MonoColor(4)
 
 
 	class Recording:
-		On = LividRGB.BiColor.WHITE.MAGENTA
-		Transition = LividRGB.BlinkFast.MAGENTA
-		Off = LividRGB.MAGENTA
+		On = MonoColor(5)
+		Transition = MonoColor(1)
+		Off = MonoColor(4)
 
 
 	class Automation:
-		On = LividRGB.BiColor.WHITE.YELLOW
-		Off = LividRGB.YELLOW
+		On = MonoColor(0)
+		Off = MonoColor(2)
 
 
 	class Recorder:
-		On = LividRGB.WHITE
-		Off = LividRGB.BLUE
-		NewOn = LividRGB.BlinkMedium.YELLOW
-		NewOff = LividRGB.YELLOW
-		FixedOn = LividRGB.BlinkMedium.CYAN
-		FixedOff = LividRGB.CYAN
-		RecordOn = LividRGB.BiColor.WHITE.MAGENTA
-		RecordOff = LividRGB.MAGENTA
-		AutomationOn = LividRGB.BiColor.WHITE.YELLOW
-		AutomationOff = LividRGB.YELLOW
-		FixedAssigned = LividRGB.MAGENTA
-		FixedNotAssigned = LividRGB.OFF
+		On = MonoColor(1)
+		Off = MonoColor(7)
+		NewOn = MonoColor(2)
+		NewOff = MonoColor(1)
+		FixedOn = MonoColor(3)
+		FixedOff = MonoColor(1)
+		RecordOn = MonoColor(4)
+		RecordOff = MonoColor(1)
+		AutomationOn = MonoColor(2)
+		AutomationOff = MonoColor(1)
+		FixedAssigned = MonoColor(4)
+		FixedNotAssigned = MonoColor(0)
 
 
 	class Device:
-		NavOn = LividRGB.MAGENTA
-		NavOff = LividRGB.OFF
-		BankOn = LividRGB.YELLOW
-		BankOff = LividRGB.OFF
-		ChainNavOn = LividRGB.RED
-		ChainNavOff = LividRGB.OFF
-		ContainNavOn = LividRGB.CYAN
-		ContainNavOff = LividRGB.OFF
+		NavOn = MonoColor(4)
+		NavOff = MonoColor(0)
+		BankOn = MonoColor(2)
+		BankOff = MonoColor(0)
+		ChainNavOn = MonoColor(5)
+		ChainNavOff = MonoColor(0)
+		ContainNavOn = MonoColor(3)
+		ContainNavOff = MonoColor(0)

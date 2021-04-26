@@ -10,7 +10,7 @@ class MonoColor(Color):
 
 	def draw(self, interface):
 		try:
-			interface.set_darkened_value(0)
+			# interface.set_darkened_value(0)
 			super(MonoColor, self).draw(interface)
 		except:
 			super(MonoColor, self).draw(interface)

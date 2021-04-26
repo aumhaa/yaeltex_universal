@@ -377,14 +377,14 @@ class YaeltexUniversal(ControlSurface):
 			clip_launch_buttons = self._cliplaunch_button_matrix.submatrix[:SESSION_BOX_SIZE[0], :SESSION_BOX_SIZE[1]],
 			stop_track_clip_buttons = self._clipstop_button_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
 			stop_all_clips_button = self._all_clipstop_button,
-			scene_launch_buttons = self._scenelaunch_button_matrix.submatrix[:SESSION_BOX_SIZE[0],:])
+			scene_launch_buttons = self._scenelaunch_button_matrix.submatrix[:SESSION_BOX_SIZE[1],:])
 		# self._session.clips_layer = AddLayerMode(self._session, Layer(priority = 4, clip_launch_buttons = self._top_buttons, stop_track_clip_buttons = self._bottom_buttons))
 		self._session.set_enabled(True)
 
 
 	def _setup_mixer_control(self):
 
-		self._mixer = MonoMixerComponent(name = 'Mixer', num_returns = 8, tracks_provider = self._session_ring, track_assigner = SimpleTrackAssigner(), invert_mute_feedback = True, auto_name = True, enable_skinning = True, channel_strip_component_type=MonoChannelStripComponent)
+		self._mixer = MonoMixerComponent(name = 'Mixer', num_returns = 8, tracks_provider = self._session_ring, track_assigner = SimpleTrackAssigner(), invert_mute_feedback = True, auto_name = True, enable_skinning = True, enable_vu_meters = VU_METER_ENABLED, channel_strip_component_type=MonoChannelStripComponent)
 		self._mixer.set_enabled(False)
 		self._mixer.master_strip().set_volume_control(self._masterVolume_control)
 		self._mixer.set_prehear_volume_control(self._cueVolume_control)
@@ -487,17 +487,17 @@ class YaeltexUniversal(ControlSurface):
 		#self._main_modes.selected_mode in ['Sends', 'Device'] and
 
 
-	def flash(self):
-		# if(self.flash_status > 0):
-		# 	for control in self.controls:
-		# 		if isinstance(control, MonoButtonElement):
-		# 			control.flash(self._timer)
-		pass
+	# def flash(self):
+	# 	if(self.flash_status > 0):
+	# 		for control in self.controls:
+	# 			if isinstance(control, MonoButtonElement):
+	# 				control.flash(self._timer)
+		# pass
 
 	# def update_display(self):
 	# 	super(ControlSurface, self).update_display()
-	# 	# self._timer = (self._timer + 1) % 256
-	# 	# self.flash()
+	# 	self._timer = (self._timer + 1) % 256
+	# 	self.flash()
 
 
 	def touched(self):

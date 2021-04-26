@@ -210,7 +210,7 @@ class MonoChannelStripComponent(ChannelStripComponentBase):
 			self.update()
 
 	def set_summed_output_meter_level_control(self, control):
-		debug('set_summed_output_meter_level_control', control)
+		# debug('set_summed_output_meter_level_control', control)
 		if control != self._summed_output_meter_level_control:
 			release_control(self._summed_output_meter_level_control)
 			self._summed_output_meter_level_control = control
@@ -266,6 +266,7 @@ class MonoChannelStripComponent(ChannelStripComponentBase):
 				self._output_meter_left_control.send_value(scaled_level)
 
 	def _on_output_meter_right_changed(self):
+		self._vu_sum_callback()
 		if self.is_enabled() and self._output_meter_right_control != None:
 			if liveobj_valid(self._track) and self._track.has_audio_output:
 				level = self._track.output_meter_right
@@ -276,14 +277,14 @@ class MonoChannelStripComponent(ChannelStripComponentBase):
 				self._output_meter_right_control.send_value(scaled_level)
 
 	def _vu_sum_callback(self, *a, **k):
-		if self.is_enabled() and self._output_meter_right_control != None:
+		if self.is_enabled() and self._summed_output_meter_level_control != None:
 			if liveobj_valid(self._track) and self._track.has_audio_output:
 				left_level = self._track.output_meter_left
 				right_level = self._track.output_meter_right
 				level = max(left_level, right_level)
 				scaled_level = self._scaled_value(level, 0, 1)
-				self._summed_output_meter_level_control.send_value(scaled_level)
-				#debug('summed output:', left_level, right_level)
+				self._summed_output_meter_level_control.send_value(scaled_level, True)
+				# debug('summed output:', scaled_level, left_level, right_level)
 
 
 	def _on_mute_changed(self):
@@ -548,7 +549,8 @@ class MonoMixerComponent(MixerComponentBase):
 
 	_channel_strip_class = MonoChannelStripComponent
 
-	def __init__(self, num_returns = 4, enable_skinning = False, *a, **k):
+	def __init__(self, num_returns = 4, enable_skinning = False, enable_vu_meters = False, *a, **k):
+		self._enable_vu_meters = enable_vu_meters
 		self._return_strips = []
 		self._return_controls = None
 		super(MonoMixerComponent, self).__init__(*a, **k)
@@ -593,23 +595,27 @@ class MonoMixerComponent(MixerComponentBase):
 
 
 	def set_output_meter_level_controls(self, controls):
-		for strip, control in zip_longest(self._channel_strips, controls or []):
-			strip.set_output_meter_level_control(control)
+		if self._enable_vu_meters:
+			for strip, control in zip_longest(self._channel_strips, controls or []):
+				strip.set_output_meter_level_control(control)
 
 
 	def set_output_meter_left_controls(self, controls):
-		for strip, control in zip_longest(self._channel_strips, controls or []):
-			strip.set_output_meter_left_control(control)
+		if self._enable_vu_meters:
+			for strip, control in zip_longest(self._channel_strips, controls or []):
+				strip.set_output_meter_left_control(control)
 
 
 	def set_output_meter_right_controls(self, controls):
-		for strip, control in zip_longest(self._channel_strips, controls or []):
-			strip.set_output_meter_right_control(control)
+		if self._enable_vu_meters:
+			for strip, control in zip_longest(self._channel_strips, controls or []):
+				strip.set_output_meter_right_control(control)
 
 
 	def set_summed_output_meter_level_controls(self, controls):
-		for strip, control in zip_longest(self._channel_strips, controls or []):
-			strip.set_summed_output_meter_level_control(control)
+		if self._enable_vu_meters:
+			for strip, control in zip_longest(self._channel_strips, controls or []):
+				strip.set_summed_output_meter_level_control(control)
 
 
 	def set_send_controls(self, controls):
