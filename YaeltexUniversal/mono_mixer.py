@@ -294,12 +294,12 @@ class MonoChannelStripComponent(ChannelStripComponentBase):
 					level = max(left_level, right_level)
 					scaled_level = self._scaled_value(level, 0, 1)
 					self._summed_output_meter_level_control.send_value(scaled_level, True)
-					debug('summed output:', scaled_level, left_level, right_level)
+					# debug('summed output:', scaled_level, left_level, right_level)
 				elif self._track.has_midi_input:
 					level = int(self._track.output_meter_level*128)
 					# scaled_level = (level/8)*127
 					self._summed_output_meter_level_control.send_value(level, True)
-					debug('summed midi output', level)
+					# debug('summed midi output', level)
 
 	def _on_mute_changed(self):
 		if self.is_enabled() and self._mute_button != None:

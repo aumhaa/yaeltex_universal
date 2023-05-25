@@ -5,12 +5,135 @@
 import Live
 import math
 import sys
+import logging
 
 #from ableton.v2.control_surface.components import DeviceComponent as DeviceComponentBase
-from _Generic.Devices import best_of_parameter_bank, device_parameters_to_map, number_of_parameter_banks, parameter_bank_names, parameter_banks
-from ableton.v2.base import depends, listens, listens_group, liveobj_valid, EventObject
+#from _Generic.Devices import best_of_parameter_bank, device_parameters_to_map, number_of_parameter_banks, parameter_bank_names, parameter_banks
+from ableton.v2.base import depends, listens, listens_group, liveobj_valid, EventObject, flatten
 from ableton.v2.control_surface.component import Component
+from ableton.v2.control_surface.control import ButtonControl
 from ableton.v2.control_surface.elements import DisplayDataSource
+from _Generic.Devices import *
+from .Map import *
+from .debug import initialize_debug
+logger = logging.getLogger(__name__)
+debug = initialize_debug()
+
+def best_of_parameter_bank(device, device_bob_dict=DEVICE_BOB_DICT):
+	if device:
+		if device.class_name in device_bob_dict:
+			bobs = device_bob_dict[device.class_name]
+			return list(map(partial(get_parameter_by_name, device), bobs[0]))
+	if device.class_name in MAX_DEVICES:
+		try:
+			parameter_indices = device.get_bank_parameters(-1)
+			return [device.parameters[i] if i != -1 else None for i in parameter_indices]
+		except:
+			return []
+
+		return device.parameters[1:17]
+
+def create_device_bank(device, banking_info):
+	bank = None
+	if liveobj_valid(device):
+		if banking_info.has_bank_count(device):
+			bank_class = MaxDeviceParameterBank
+		elif banking_info.device_bank_definition(device) is not None:
+			# bank_class = DescribedDeviceParameterBank
+			bank_class = LargeDescribedDeviceParameterBank
+		else:
+			bank_class = DeviceParameterBank
+		bank = bank_class(device=device, size=16, banking_info=banking_info)
+	return bank
+
+
+def xstr(s):
+	if s is None:
+		return ''
+	else:
+		return str(s)
+
+
+def special_number_of_parameter_banks(device, device_dict = DEVICE_DICT):
+	""" Determine the amount of parameter banks the given device has """
+	if device != None:
+		if device.class_name in list(device_dict.keys()):
+			device_bank = device_dict[device.class_name]
+			return math.floor(len(device_bank)/2) + (1 if len(device_bank)%2 else 0)
+		else:
+			if device.class_name in MAX_DEVICES:
+				try:
+					banks = device.get_bank_count()
+				except:
+					banks = 0
+				if banks != 0:
+					return banks
+			param_count = len(device.parameters[1:])
+			return math.floor(param_count / 16 + (1 if param_count % 16 else 0))
+	return 0
+
+
+def special_parameter_bank_names(device, bank_name_dict = BANK_NAME_DICT):
+	if device != None:
+		if device.class_name in list(bank_name_dict.keys()):
+			ret = group(bank_name_dict[device.class_name], 2)
+			ret1 = [[i for i in bank_names if not i is None] for bank_names in ret]
+			return [' - '.join(i) for i in ret1]
+		banks = special_number_of_parameter_banks(device)
+		def _default_bank_name(bank_index):
+			return 'Bank ' + str(bank_index + 1)
+
+		if device.class_name in MAX_DEVICES and banks != 0:
+			def _is_ascii(c):
+				return ord(c) < 128
+
+			def _bank_name(bank_index):
+				try:
+					name = device.get_bank_name(bank_index)
+				except:
+					name = None
+				if name:
+					return str(list(filter(_is_ascii, name)))
+				else:
+					return _default_bank_name(bank_index)
+
+			return list(map(_bank_name, list(range(0, banks))))
+		else:
+			return list(map(_default_bank_name, list(range(0, banks))))
+	return []
+
+
+def special_parameter_banks(device, device_dict = DEVICE_DICT):
+	""" Determine the parameters to use for a device """
+	if device != None:
+		if device.class_name is 'LegacyModDeviceProxy':
+			return group(device_parameters_to_map(device), 16)
+		elif device.class_name in list(device_dict.keys()):
+			def names_to_params(bank):
+				return list(map(partial(get_parameter_by_name, device), bank))
+
+			return group([i for i in flatten(list(map(names_to_params, device_dict[device.class_name])))], 16)
+		else:
+			if device.class_name in MAX_DEVICES:
+				try:
+					banks = device.get_bank_count()
+				except:
+					banks = 0
+				if banks != 0:
+					def _bank_parameters(bank_index):
+						try:
+							parameter_indices = device.get_bank_parameters(bank_index)
+						except:
+							parameter_indices = []
+						if len(parameter_indices) != 16:
+							return [ None for i in range(0, 16) ]
+						else:
+							return [ (device.parameters[i] if i != -1 else None) for i in parameter_indices ]
+
+					return list(map(_bank_parameters, list(range(0, banks))))
+			return group(device_parameters_to_map(device), 16)
+	return []
+
 
 class DeviceBankRegistry(EventObject):
 	__events__ = ('device_bank',)
@@ -43,6 +166,12 @@ class DeviceBankRegistry(EventObject):
 
 class DeviceComponentBase(Component):
 	""" Class representing a device in Live """
+
+	add_macro_button = ButtonControl(color = "Device.AddVariation")
+	delete_macro_button = ButtonControl(color = "Device.DeleteVariation")
+	next_macro_button = ButtonControl(color = "Device.VariationNavOn")
+	prev_macro_button = ButtonControl(color = "Device.VariationNavOn")
+	randomize_macro_button = ButtonControl(color = "Device.RandomizeControls")
 
 	@depends(device_bank_registry=None)
 	@depends(device_provider=None)
@@ -81,6 +210,18 @@ class DeviceComponentBase(Component):
 		self._device_provider = None
 		super(DeviceComponentBase, self).disconnect()
 
+	#this property can't be listened to, so we can't skin it based on whether it can be incremented or decremented :/
+	# @listens('selected_variation_index')
+	# def _update_device_macro_buttons(self):
+	# 	device = self._get_device()
+	# 	if liveobj_valid(device):
+	# 		if hasattr(device, 'selected_variation_index'):
+	# 			index = device.selected_variation_index
+	# 			count = device.variation_count
+	# 			self.prev_macro_button.color = "Device.VariationNavOn" if (index > 0) else "Device.VariationNavOff"
+	# 			self.next_macro_button.color = "Device.VariationNavOn" if (index < (count-1)) else "Device.VariationNavOff"
+
+
 	def _get_device(self):
 		return self._device_provider.device
 
@@ -102,7 +243,65 @@ class DeviceComponentBase(Component):
 		self._bank_index = self._device_bank_registry.get_device_bank(device)
 		self._bank_name = '<No Bank>'
 		self.__on_device_name_changed()
+		# self._update_device_macro_buttons.subject = device if hasattr(device, 'selected_variation_index') else None  #this property can't be listened to, so we can't skin it based on whether it can be incremented or decremented :/
 		self.update()
+
+	@randomize_macro_button.pressed
+	def randomize_macro_button(self, button):
+		debug('randomize_macro_button.pressed')
+		device = self._get_device()
+		if liveobj_valid(device):
+			if hasattr(device, 'randomize_macros'):
+				device.randomize_macros()
+
+	@add_macro_button.pressed
+	def add_macro_button(self, button):
+		debug('add_macro_button.pressed')
+		device = self._get_device()
+		if liveobj_valid(device):
+			if hasattr(device, 'store_variation'):
+				device.store_variation()
+
+	@delete_macro_button.pressed
+	def delete_macro_button(self, button):
+		debug('delete_macro_button.pressed')
+		device = self._get_device()
+		if liveobj_valid(device):
+			if hasattr(device, 'delete_selected_variation'):
+				# debug('deleting...')
+				index = device.selected_variation_index
+				device.delete_selected_variation()
+				if device.variation_count:
+					device.selected_variation_index = max(0, index-1)
+
+	@prev_macro_button.pressed
+	def prev_macro_button(self, button):
+		debug('prev_macro_button.pressed')
+		device = self._get_device()
+		if liveobj_valid(device):
+			if hasattr(device, 'selected_variation_index'):
+				index = device.selected_variation_index
+				count = device.variation_count
+				if index > -1:
+					device.selected_variation_index = max(0, index-1)
+				else:
+					device.selected_variation_index = count-1
+				device.recall_selected_variation()
+
+	@next_macro_button.pressed
+	def next_macro_button(self, button):
+		debug('next_macro_button.pressed')
+		device = self._get_device()
+		if liveobj_valid(device):
+			if hasattr(device, 'selected_variation_index'):
+				index = device.selected_variation_index
+				count = device.variation_count
+				if index > -1:
+					device.selected_variation_index = min(count-1, index+1)
+				else:
+					device.selected_variation_index = 0
+				device.recall_selected_variation()
+
 
 	def set_bank_prev_button(self, button):
 		if button != self._bank_down_button:
@@ -156,6 +355,8 @@ class DeviceComponentBase(Component):
 			self._update_on_off_button()
 			self._update_device_bank_buttons()
 			self._update_device_bank_nav_buttons()
+			# self._update_device_macro_buttons()
+
 
 	def _bank_up_value(self, value):
 		assert self._bank_up_button != None
@@ -278,31 +479,48 @@ class DeviceComponentBase(Component):
 	def _best_of_parameter_bank(self):
 		return best_of_parameter_bank(self._get_device())
 
+
 	def _parameter_banks(self):
-		return parameter_banks(self._get_device())
+		if EXTENDED_PARAM_DIALS:
+			return special_parameter_banks(self._get_device())
+		else:
+			return parameter_banks(self._get_device())
+
 
 	def _parameter_bank_names(self):
-		return parameter_bank_names(self._get_device())
+		if EXTENDED_PARAM_DIALS:
+			return special_parameter_bank_names(self._get_device())
+		else:
+			return parameter_bank_names(self._get_device())
+
+
+	def _number_of_parameter_banks(self):
+		if EXTENDED_PARAM_DIALS:
+			return special_number_of_parameter_banks(self._get_device())
+		else:
+			return number_of_parameter_banks(self._get_device())
+
 
 	def _device_parameters_to_map(self):
 		return device_parameters_to_map(self._get_device())
 
-	def _number_of_parameter_banks(self):
-		return number_of_parameter_banks(self._get_device())
-
 	def _current_bank_details(self):
 		bank_name = self._bank_name
 		bank = []
-		best_of = self._best_of_parameter_bank()
+		# best_of only have 8 params, so we're automatically setting its return to false
+		# best_of = self._best_of_parameter_bank()
+		best_of = False
 		banks = self._parameter_banks()
 		if banks:
 			if self._bank_index != None and self._is_banking_enabled() or not best_of:
 				index = self._bank_index if self._bank_index != None else 0
 				bank = banks[index]
+				# debug('bank is:', bank)
 				bank_name = self._parameter_bank_names()[index]
 			else:
 				bank = best_of
 				bank_name = 'Best of Parameters'
+		# debug('current_bank_details:', bank_name, bank)
 		return (bank_name, bank)
 
 	@listens('device_bank')
