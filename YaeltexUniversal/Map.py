@@ -250,42 +250,42 @@ class YAELTEXColors:
 
 	class ModeButtons:
 		Main = MonoColor(1)
-		Select = MonoColor(5)
+		Select = MonoColor(97)
 		Clips = MonoColor(6)
 
 
 	class DefaultButton:
-		On = MonoColor(127)
+		On = MonoColor(75)
 		Off = MonoColor(0)
 		Disabled = MonoColor(0)
-		Alert = MonoColor(1)
+		Alert = MonoColor(127)
 
 
 	class Session:
 		StopClipDisabled = MonoColor(0)
-		StopClipTriggered = MonoColor(7)
-		StopClip = MonoColor(7)
-		Scene = MonoColor(3)
+		StopClipTriggered = MonoColor(75)
+		StopClip = MonoColor(22)
+		Scene = MonoColor(118)
 		NoScene = MonoColor(0)
-		SceneTriggered = MonoColor(6)
+		SceneTriggered = MonoColor(57)
 		ClipTriggeredPlay = MonoColor(7)
 		ClipTriggeredRecord = MonoColor(5)
-		RecordButton = MonoColor(0)
-		ClipEmpty = MonoColor(0)
-		ClipStopped = MonoColor(1)
-		ClipStarted = MonoColor(6)
-		ClipRecording = MonoColor(5)
-		NavigationButtonOn = MonoColor(3)
+		RecordButton = MonoColor(121)
+		ClipEmpty = MonoColor(127)
+		ClipStopped = MonoColor(120)
+		ClipStarted = MonoColor(43)
+		ClipRecording = MonoColor(109)
+		NavigationButtonOn = MonoColor(102)
 		NavigationButtonOff = MonoColor(2)
-		ZoomOn = MonoColor(1)
-		ZoomOff = MonoColor(7)
+		ZoomOn = MonoColor(36)
+		ZoomOff = MonoColor(0)
 		SelectedClipLaunch = MonoColor(8)
-		SelectedSceneLaunch = MonoColor(8)
+		SelectedSceneLaunch = MonoColor(88)
 
 
 	class Zooming:
 		Selected = MonoColor(2)
-		Stopped = MonoColor(1)
+		Stopped = MonoColor(0)
 		Playing = MonoColor(6)
 		Empty = MonoColor(0)
 
@@ -300,50 +300,50 @@ class YAELTEXColors:
 
 
 	class Transport:
-		PlayOn = MonoColor(6)
-		PlayOff = MonoColor(6)
-		StopOn = MonoColor(7)
-		StopOff = MonoColor(7)
-		RecordOn = MonoColor(5)
-		RecordOff = MonoColor(5)
-		OverdubOn = MonoColor(4)
-		OverdubOff = MonoColor(4)
+		PlayOn = MonoColor(49)
+		PlayOff = MonoColor(0)
+		StopOn = MonoColor(127)
+		StopOff = MonoColor(0)
+		RecordOn = MonoColor(118)
+		RecordOff = MonoColor(0)
+		OverdubOn = MonoColor(1)
+		OverdubOff = MonoColor(0)
 		SeekBackwardOn = MonoColor(3)
-		SeekBackwardOff = MonoColor(3)
-		LoopOn = MonoColor(2)
-		LoopOff = MonoColor(2)
+		SeekBackwardOff = MonoColor(0)
+		LoopOn = MonoColor(19)
+		LoopOff = MonoColor(0)
 
 
 	class Mixer:
-		SoloOn = MonoColor(7)
-		SoloOff = MonoColor(3)
-		MuteOn = MonoColor(2)
-		MuteOff = MonoColor(1)
-		ArmSelected = MonoColor(5)
-		ArmUnselected = MonoColor(5)
-		ArmOff = MonoColor(6)
-		StopClip = MonoColor(7)
-		SelectedOn = MonoColor(7)
-		SelectedOff = MonoColor(4)
+		SoloOn = MonoColor(81)
+		SoloOff = MonoColor(0)
+		MuteOn = MonoColor(16)
+		MuteOff = MonoColor(0)
+		ArmSelected = MonoColor(121)
+		ArmUnselected = MonoColor(7)
+		ArmOff = MonoColor(0)
+		StopClip = MonoColor(60)
+		SelectedOn = MonoColor(49)
+		SelectedOff = MonoColor(0)
 		XFadeOff = MonoColor(0)
-		XFadeAOn = MonoColor(2)
-		XFadeBOn = MonoColor(4)
+		XFadeAOn = MonoColor(49)
+		XFadeBOn = MonoColor(75)
 
 
 	class Recording:
-		On = MonoColor(5)
-		Transition = MonoColor(1)
-		Off = MonoColor(4)
+		On = MonoColor(1)
+		Transition = MonoColor(105)
+		Off = MonoColor(0)
 
 
 	class Automation:
-		On = MonoColor(0)
-		Off = MonoColor(2)
+		On = MonoColor(121)
+		Off = MonoColor(0)
 
 
 	class Recorder:
 		On = MonoColor(1)
-		Off = MonoColor(7)
+		Off = MonoColor(0)
 		NewOn = MonoColor(2)
 		NewOff = MonoColor(1)
 		FixedOn = MonoColor(3)
@@ -357,16 +357,16 @@ class YAELTEXColors:
 
 
 	class Device:
-		NavOn = MonoColor(4)
+		NavOn = MonoColor(19)
 		NavOff = MonoColor(0)
-		BankOn = MonoColor(2)
+		BankOn = MonoColor(49)
 		BankOff = MonoColor(0)
-		ChainNavOn = MonoColor(5)
+		ChainNavOn = MonoColor(43)
 		ChainNavOff = MonoColor(0)
-		ContainNavOn = MonoColor(3)
+		ContainNavOn = MonoColor(43)
 		ContainNavOff = MonoColor(0)
-		AddVariation = MonoColor(1)
+		AddVariation = MonoColor(49)
 		DeleteVariation = MonoColor(2)
 		VariationNavOn = MonoColor(3)
 		VariationNavOff = MonoColor(4)
-		RandomizeControls = MonoColor(5)
+		RandomizeControls = MonoColor(75)
