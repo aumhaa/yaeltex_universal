@@ -23,6 +23,7 @@ from ableton.v2.control_surface.components.scroll import ScrollComponent
 from ableton.v2.control_surface.components.view_control import BasicSceneScroller
 
 from .Map import *
+from .colors import *
 from .mono_encoder import MonoEncoderElement
 from .mono_mixer import MonoMixerComponent, MonoChannelStripComponent
 from .device import DeviceComponent
@@ -160,7 +161,7 @@ class SpecialSessionRingComponent(SessionRingComponent):
 	# 	self._on_linked_offset_changed.subject = self._linked_session_ring
 
 	def _globalInstances(self):
- 		return get_yt_linked_session_ring_instances()
+		return get_yt_linked_session_ring_instances()
 
 
 	def link_with_track_offset(self, track_offset):
@@ -638,6 +639,7 @@ class YaeltexUniversal(ControlSurface):
 		self._session_navigation.set_enabled(True)
 
 		self._session = SpecialSessionComponent(session_ring = self._session_ring, auto_name = True)
+		self._session.set_rgb_mode(LIVE_COLORS_TO_MIDI_VALUES, RGB_COLOR_TABLE, clip_slots_only=True)
 		self._session.layer = Layer(priority = 4,
 			clip_launch_buttons = self._cliplaunch_button_matrix.submatrix[:SESSION_BOX_SIZE[0], :SESSION_BOX_SIZE[1]],
 			stop_track_clip_buttons = self._clipstop_button_matrix.submatrix[:SESSION_BOX_SIZE[0],:],

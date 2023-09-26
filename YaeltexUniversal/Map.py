@@ -271,7 +271,7 @@ class YAELTEXColors:
 		ClipTriggeredPlay = MonoColor(7)
 		ClipTriggeredRecord = MonoColor(5)
 		RecordButton = MonoColor(121)
-		ClipEmpty = MonoColor(127)
+		ClipEmpty = MonoColor(0)
 		ClipStopped = MonoColor(120)
 		ClipStarted = MonoColor(43)
 		ClipRecording = MonoColor(109)
@@ -370,3 +370,5 @@ class YAELTEXColors:
 		VariationNavOn = MonoColor(3)
 		VariationNavOff = MonoColor(4)
 		RandomizeControls = MonoColor(75)
+
+
