@@ -1,6 +1,8 @@
 # by amounra 0216 : http://www.aumhaa.com
 # written against Live 9.6 release on 021516
-
+# YURS v2.2
+# - 2023 Live 11 edits. 16 parameter device capability, macro variation, additional controls.
+# - Session clip coloring support.
 
 from ableton.v2.control_surface.elements.color import Color
 from .colors import *
