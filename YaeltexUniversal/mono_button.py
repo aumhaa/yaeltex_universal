@@ -1,5 +1,5 @@
-# by amounra 0216 : http://www.aumhaa.com
-# written against Live 10.0.3b1 on 061218
+# by amounra 1125 : http://www.aumhaa.com
+# version 2.3
 
 
 
@@ -8,7 +8,7 @@ import math
 
 from ableton.v2.control_surface.elements.button import ButtonElement
 from ableton.v2.control_surface.skin import Skin, SkinColorMissingError
-from .mono_bridge import MonoBridgeProxy
+# from .mono_bridge import MonoBridgeProxy
 from .debug import initialize_debug
 
 MIDI_NOTE_TYPE = 0

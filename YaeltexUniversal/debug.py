@@ -1,4 +1,5 @@
-# by amounra 0915 : http://www.aumhaa.com
+# by amounra 1125 : http://www.aumhaa.com
+# version 2.3
 
 #for debugging connection:
 #install telnet with brew install telnet
@@ -186,8 +187,8 @@ class TelnetDebugger(object):
 		self._script.handle = self.handle
 
 	def is_port_in_use(self, port):
-	    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-	        return s.connect_ex(('localhost', port)) == 0
+		with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+			return s.connect_ex(('localhost', port)) == 0
 
 	def handle(self):
 		return self._LiveTelnet__c_instance.handle()

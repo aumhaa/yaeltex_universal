@@ -1,4 +1,5 @@
-# by amounra 1118 : http://www.aumhaa.com
+# by amounra 1125 : http://www.aumhaa.com
+# version 2.3
 
 from .YaeltexUniversal import YaeltexUniversal
 from _Framework.Capabilities import controller_id, inport, outport, CONTROLLER_ID_KEY, PORTS_KEY, HIDDEN, NOTES_CC, SCRIPT, REMOTE, SYNC, TYPE_KEY, FIRMWARE_KEY, AUTO_LOAD_KEY

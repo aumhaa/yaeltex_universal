@@ -1,6 +1,7 @@
-# by amounra 0216 : http://www.aumhaa.com
-# written against Live 9.6 release on 021516
-# YURS v2.2
+# by amounra 1125 : http://www.aumhaa.com
+# version 2.3
+
+# YURS v2.3
 # - 2023 Live 11 edits. 16 parameter device capability, macro variation, additional controls.
 # - Session clip coloring support.
 
@@ -161,6 +162,9 @@ SENDG_CHANNEL = 1
 SENDH_CCS = list(range(112, 128))
 SENDH_CHANNEL = 1
 
+SELECTED_SENDS_CHANNEL = 11
+SELECTED_SENDS_CCS = list(range(0, 8))
+
 TRACK_SELECT_CC = 115
 TRACK_SELECT_CHANNEL = 0
 
@@ -205,6 +209,9 @@ SCENELAUNCH_CHANNEL = 2
 
 SESSIONNAV_NOTES = list(range(24,28))
 SESSIONNAV_CHANNEL = 2
+
+SESSION_DUPLICATE_NOTE = 30
+SESSION_DELETE_NOTE = 31
 
 SESSIONCLIPLAUNCH_NOTE = 28
 SESSIONCLIPLAUNCH_CHANNEL = 2

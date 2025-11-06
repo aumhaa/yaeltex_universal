@@ -1,5 +1,5 @@
-# by amounra 1120 : http://www.aumhaa.com
-# written against Live 11.0b29 on 021521
+# by amounra 1125 : http://www.aumhaa.com
+# version 2.3
 
 
 import Live
@@ -143,11 +143,13 @@ class SpecialSessionRingComponent(SessionRingComponent):
 
 	def __init__(self, script, *a, **k):
 		self._script = script
+		self._snap_offsets = True
 		# self.__is_linked = False
 		super(SpecialSessionRingComponent, self).__init__(*a, **k)
 
 	# def _is_linked(self):
 	# 	return self.__is_linked
+
 
 	@listens('offset')
 	def _on_linked_offset_changed(self, track_offset, scene_offset):
@@ -388,7 +390,7 @@ class YaeltexUniversal(ControlSurface):
 		globalInstances = get_yt_linked_session_ring_instances()
 		support_devices = False
 		for instance in globalInstances._active_instances:
-			support_devices |= instance._device != None
+			support_devices |= hasattr(instance, '_device') and instance._device != None
 
 		track_offset = 0
 		if globalInstances._active_instances:
@@ -464,6 +466,8 @@ class YaeltexUniversal(ControlSurface):
 		self._session_nav_down = MonoButtonElement(is_momentary = is_momentary, msg_type = MIDI_NOTE_TYPE, channel = SESSIONNAV_CHANNEL, identifier = SESSIONNAV_NOTES[1], name = 'SessionNavDownButton', script = self, skin = self._skin, optimized_send_midi = optimized, resource_type = resource)
 		self._session_nav_left = MonoButtonElement(is_momentary = is_momentary, msg_type = MIDI_NOTE_TYPE, channel = SESSIONNAV_CHANNEL, identifier = SESSIONNAV_NOTES[2], name = 'SessionNavLeftButton', script = self, skin = self._skin, optimized_send_midi = optimized, resource_type = resource)
 		self._session_nav_right = MonoButtonElement(is_momentary = is_momentary, msg_type = MIDI_NOTE_TYPE, channel = SESSIONNAV_CHANNEL, identifier = SESSIONNAV_NOTES[3], name = 'SessionNavRightButton', script = self, skin = self._skin, optimized_send_midi = optimized, resource_type = resource)
+		self._duplicate_button = MonoButtonElement(is_momentary = is_momentary, msg_type = MIDI_NOTE_TYPE, channel = SESSIONNAV_CHANNEL, identifier = SESSION_DUPLICATE_NOTE, name = 'DuplicateButton', script = self, skin = self._skin, optimized_send_midi = optimized, resource_type = resource)
+		self._delete_button = MonoButtonElement(is_momentary = is_momentary, msg_type = MIDI_NOTE_TYPE, channel = SESSIONNAV_CHANNEL, identifier = SESSION_DELETE_NOTE, name = 'DeleteButton', script = self, skin = self._skin, optimized_send_midi = optimized, resource_type = resource)
 
 		self._session_selected_clip_launch = MonoButtonElement(is_momentary = is_momentary, msg_type = MIDI_NOTE_TYPE, channel = SESSIONCLIPLAUNCH_CHANNEL, identifier = SESSIONCLIPLAUNCH_NOTE, name = 'SessionSelectedClipLaunch', script = self, skin = self._skin, optimized_send_midi = optimized, resource_type = resource)
 		self._session_selected_scene_launch = MonoButtonElement(is_momentary = is_momentary, msg_type = MIDI_NOTE_TYPE, channel = SESSIONSCENELAUNCH_CHANNEL, identifier = SESSIONSCENELAUNCH_NOTE, name = 'SessionSelectedSceneLaunch', script = self, skin = self._skin, optimized_send_midi = optimized, resource_type = resource)
@@ -501,7 +505,7 @@ class YaeltexUniversal(ControlSurface):
 		self._sendF_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = SENDF_CHANNEL, identifier = SENDF_CCS[index], name = 'SendF_Control_' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(len(SENDF_CCS))]
 		self._sendG_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = SENDG_CHANNEL, identifier = SENDG_CCS[index], name = 'SendG_Control_' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(len(SENDG_CCS))]
 		self._sendH_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = SENDH_CHANNEL, identifier = SENDH_CCS[index], name = 'SendH_Control_' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(len(SENDH_CCS))]
-
+		self._selected_send_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = SELECTED_SENDS_CHANNEL, identifier = SELECTED_SENDS_CCS[index], name = 'Selected_Send_Control_' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(len(SELECTED_SENDS_CCS))]	
 		self._return_volume_controls = [MonoEncoderElement(mapping_feedback_delay = -1, msg_type = MIDI_CC_TYPE, channel = RETURN_VOLUME_CHANNEL, identifier = RETURN_VOLUME_CCS[index], name = 'Return_Volume_Control_' + str(index), num = index, script = self, optimized_send_midi = optimized, resource_type = resource) for index in range(len(RETURN_VOLUME_CCS))]
 
 		self._track_parameter_on_off_buttons  = [MonoButtonElement(is_momentary = is_momentary, msg_type = MIDI_NOTE_TYPE, channel = TRACK_PARAMETER_ON_OFF_CHANNEL, identifier = TRACK_PARAMETER_ON_OFF_NOTES[index], name = 'TrackParameterOnOff_Button_' + str(index), script = self, skin = self._skin, optimized_send_midi = optimized, resource_type = resource) for index in range(len(TRACK_PARAMETER_ON_OFF_NOTES))]
@@ -561,6 +565,7 @@ class YaeltexUniversal(ControlSurface):
 		self._pan_control_matrix = ButtonMatrixElement(name = 'PanControlMatrix', rows = [self._pan_controls])
 		self._parameter_control_matrix = ButtonMatrixElement(name = 'ParameterControlMatrix', rows = [self._parameter_controls])
 
+		self._selected_send_control_matrix = ButtonMatrixElement(name = 'SelectedSendControlMatrix', rows = [self._selected_send_controls])
 		self._send_control_matrix = ButtonMatrixElement(name = 'SendControlMatrix', rows = [self._sendA_controls,
 																							self._sendB_controls,
 																							self._sendC_controls,
@@ -656,6 +661,7 @@ class YaeltexUniversal(ControlSurface):
 
 		self._mixer = MonoMixerComponent(name = 'Mixer', num_returns = 8, tracks_provider = self._session_ring, track_assigner = SimpleTrackAssigner(), invert_mute_feedback = True, auto_name = True, enable_skinning = True, enable_vu_meters = VU_METER_ENABLED, channel_strip_component_type=MonoChannelStripComponent)
 		self._mixer.set_enabled(False)
+		self._mixer.set_rgb_mode(LIVE_COLORS_TO_MIDI_VALUES, RGB_COLOR_TABLE, clip_slots_only=True)	
 		self._mixer.master_strip().set_volume_control(self._masterVolume_control)
 		self._mixer.set_prehear_volume_control(self._cueVolume_control)
 
@@ -694,12 +700,14 @@ class YaeltexUniversal(ControlSurface):
 			arm_buttons = self._arm_button_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
 			solo_buttons = self._solo_button_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
 			track_select_buttons = self._select_button_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
+			# arming_track_select_buttons = self._select_button_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
 			pan_controls = self._pan_control_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
+			send_controls = self._selected_send_control_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
 			return_controls = self._return_volume_control_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
 			crossfader_control = self._crossfader_control,
 			prehear_volume_control = self._cueVolume_control,
-			crossfade_toggles = self._crossfade_assign_button_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
-			send_controls = self._send_control_matrix.submatrix[:SESSION_BOX_SIZE[0],:NUM_SEND_CONTROLS],)
+			crossfade_toggles = self._crossfade_assign_button_matrix.submatrix[:SESSION_BOX_SIZE[0],:],)
+			# send_controls = self._send_control_matrix.submatrix[:SESSION_BOX_SIZE[0],:NUM_SEND_CONTROLS],)
 
 
 			# output_meter_level_controls = self._output_meter_level_matrix,

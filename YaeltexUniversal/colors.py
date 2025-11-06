@@ -1,3 +1,5 @@
+# by amounra 1125 : http://www.aumhaa.com
+# version 2.3
 
 from ableton.v2.control_surface.elements.color import Color
 from .debug import initialize_debug

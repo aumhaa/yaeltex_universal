@@ -1,5 +1,5 @@
-# by amounra 0216 : http://www.aumhaa.com
-# written against Live 10.0.4 100918
+# by amounra 1125 : http://www.aumhaa.com
+# version 2.3
 
 
 import Live
@@ -106,7 +106,7 @@ def special_parameter_bank_names(device, bank_name_dict = BANK_NAME_DICT):
 def special_parameter_banks(device, device_dict = DEVICE_DICT):
 	""" Determine the parameters to use for a device """
 	if device != None:
-		if device.class_name is 'LegacyModDeviceProxy':
+		if device.class_name == 'LegacyModDeviceProxy':
 			return group(device_parameters_to_map(device), 16)
 		elif device.class_name in list(device_dict.keys()):
 			def names_to_params(bank):
@@ -363,7 +363,7 @@ class DeviceComponentBase(Component):
 		assert value != None
 		assert isinstance(value, int)
 		if self.is_enabled():
-			if not self._bank_up_button.is_momentary() or value is not 0:
+			if not self._bank_up_button.is_momentary() or value != 0:
 				if liveobj_valid(self._get_device()):
 					num_banks = self._number_of_parameter_banks()
 					if self._bank_down_button == None:
@@ -380,7 +380,7 @@ class DeviceComponentBase(Component):
 		assert value != None
 		assert isinstance(value, int)
 		if self.is_enabled():
-			if not self._bank_down_button.is_momentary() or value is not 0:
+			if not self._bank_down_button.is_momentary() or value != 0:
 				if liveobj_valid(self._get_device()) and (self._bank_index == None or self._bank_index > 0):
 					self._bank_name = ''
 					self._bank_index = self._bank_index - 1 if self._bank_index != None else max(0, self._number_of_parameter_banks() - 1)
@@ -389,7 +389,7 @@ class DeviceComponentBase(Component):
 	def _on_off_value(self, value):
 		assert self._on_off_button != None
 		assert value in range(128)
-		if not self._on_off_button.is_momentary() or value is not 0:
+		if not self._on_off_button.is_momentary() or value != 0:
 			parameter = self._on_off_parameter()
 			if parameter != None and parameter.is_enabled:
 				parameter.value = float(int(parameter.value == 0.0))
@@ -400,7 +400,7 @@ class DeviceComponentBase(Component):
 
 	def _bank_value(self, value, button):
 		if self.is_enabled() and liveobj_valid(self._get_device()):
-			if not button.is_momentary() or value is not 0:
+			if not button.is_momentary() or value != 0:
 				bank = list(self._bank_buttons).index(button)
 				if bank != self._bank_index:
 					if self._number_of_parameter_banks() > bank:
@@ -493,6 +493,9 @@ class DeviceComponentBase(Component):
 		else:
 			return parameter_bank_names(self._get_device())
 
+#this is uncommeented in the Vadim version script
+#	def _device_parameters_to_map(self):
+#		return device_parameters_to_map(self._get_device())
 
 	def _number_of_parameter_banks(self):
 		if EXTENDED_PARAM_DIALS:

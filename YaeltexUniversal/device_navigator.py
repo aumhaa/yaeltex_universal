@@ -1,5 +1,5 @@
-# by amounra 0416 : http://www.aumhaa.com
-# written against Live 9.61 release on 042816
+# by amounra 1125 : http://www.aumhaa.com
+# version 2.3
 
 
 import Live
@@ -109,7 +109,7 @@ class DeviceNavigator(Component):
 			track = self._get_track()
 			current_device = self.current_device
 			if track and current_device and current_device in track.devices:
-				if isinstance(track, Live.Chain.Chain) and [device for device in track.devices].index(current_device) is 0:
+				if isinstance(track, Live.Chain.Chain) and [device for device in track.devices].index(current_device) == 0:
 					self._on_exit_value(1)
 				else:
 					device = track.devices[min(len(track.devices)-1, max(0, [item for item in track.devices].index(current_device)-1))]

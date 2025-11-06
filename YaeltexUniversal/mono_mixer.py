@@ -1,5 +1,5 @@
-# by amounra 0221 : http://www.aumhaa.com
-# written against Live 10.0.5 on 102318
+# by amounra 1125 : http://www.aumhaa.com
+# version 2.3
 
 
 import Live
@@ -39,6 +39,21 @@ VU_SUM_DELAY = 0.1
 def release_control(control):
 	if control != None:
 		control.release_parameter()
+
+
+def find_nearest_color(rgb_table, src_hex_color):
+
+	def hex_to_channels(color_in_hex):
+		return (
+		 (color_in_hex & 16711680) >> 16,
+		 (color_in_hex & 65280) >> 8,
+		 color_in_hex & 255)
+
+	def squared_distance(color):
+		return sum([(a - b) ** 2 for a, b in zip(hex_to_channels(src_hex_color), hex_to_channels(color[1]))])
+
+	return min(rgb_table, key=squared_distance)[0]
+
 
 
 class TrackArmState(EventObject):
@@ -158,10 +173,13 @@ class MonoChannelStripComponent(ChannelStripComponentBase):
 	_output_meter_left_control = None
 	_output_meter_right_control = None
 	_summed_output_meter_level_control = None
+	_default_color = 'DefaultButton.On'
 
 	def __init__(self, *a, **k):
 		super(MonoChannelStripComponent, self).__init__(*a, **k)
 
+		self._strip_palette = []
+		self._strip_rgb_table = None
 		def make_property_slot(name, alias = None):
 			alias = alias or name
 			return self.register_slot(None, getattr(self, '_on_%s_changed' % alias), name)
@@ -191,6 +209,40 @@ class MonoChannelStripComponent(ChannelStripComponentBase):
 		self.__on_selected_track_changed()
 
 
+
+	def set_strip_palette(self, palette):
+		self._strip_palette = palette
+
+
+	def set_strip_rgb_table(self, rgb_table):
+		self._strip_rgb_table = rgb_table
+
+
+	def _color_for_track(self, track):
+		if liveobj_valid(track):
+			color = track.color
+			try:
+				return self._strip_palette[color]
+			except (KeyError, IndexError):
+				if self._strip_rgb_table is not None:
+					return find_nearest_color(self._strip_rgb_table, color)
+				else:
+					return self._selected_off_color
+
+
+
+	# def _color_value(self, slot_or_clip):
+    #     color = slot_or_clip.color
+    #     try:
+    #         return self._clip_palette[color]
+    #     except (KeyError, IndexError):
+    #         if self._track_rgb_table is not None:
+    #             return find_nearest_color(self._track_rgb_table, color)
+    #         else:
+	# 			return self._default_color
+
+
+	
 	@listens('selected_track')
 	def __on_selected_track_changed(self):
 		if liveobj_valid(self._track) or self.empty_color == None:
@@ -597,6 +649,12 @@ class MonoMixerComponent(MixerComponentBase):
 			strip._xfade_b_color = 'Mixer.XFadeBOn'
 
 
+	def set_rgb_mode(self, color_palette, color_table, clip_slots_only=False):
+		for strip in self._channel_strips:
+			strip.set_strip_palette(color_palette)
+			strip.set_strip_rgb_table(color_table)
+	
+	
 	def return_strip(self, index):
 		assert(index in range(len(self._return_strips)))
 		return self._return_strips[index]
