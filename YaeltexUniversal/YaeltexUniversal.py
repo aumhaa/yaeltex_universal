@@ -10,380 +10,38 @@ from re import *
 from itertools import chain, starmap
 
 from ableton.v2.base import inject, listens, listens_group, nop
-from ableton.v2.control_surface import ControlSurface, ControlElement, Layer, Skin, PrioritizedResource, Component, ClipCreator, DeviceBankRegistry
-from ableton.v2.control_surface.elements import EncoderElement, ComboElement, ButtonMatrixElement, DoublePressElement, MultiElement, DisplayDataSource, SysexElement
-from ableton.v2.control_surface.components import ClipSlotComponent, SceneComponent, SessionComponent, TransportComponent, BackgroundComponent, ViewControlComponent, SessionRingComponent, SessionRecordingComponent, SessionNavigationComponent, MixerComponent, PlayableComponent
+from ableton.v2.control_surface import ControlSurface, Layer, Skin, PrioritizedResource, DeviceBankRegistry
+from ableton.v2.control_surface.elements import ButtonMatrixElement
+from ableton.v2.control_surface.components import  TransportComponent, BackgroundComponent
 from ableton.v2.control_surface.components.mixer import SimpleTrackAssigner
-from ableton.v2.control_surface.control import control_color
 from ableton.v2.control_surface.mode import AddLayerMode, ModesComponent, DelayMode
-from ableton.v2.control_surface.elements.physical_display import PhysicalDisplayElement
 from ableton.v2.control_surface.components.session_recording import *
-from ableton.v2.control_surface.control import PlayableControl, ButtonControl, control_matrix
-from ableton.v2.control_surface.components.scroll import ScrollComponent
-from ableton.v2.control_surface.components.view_control import BasicSceneScroller
 
 from .Map import *
 from .colors import *
 from .mono_encoder import MonoEncoderElement
 from .mono_mixer import MonoMixerComponent, MonoChannelStripComponent
 from .device import DeviceComponent
-from .mono_button import *
+from .mono_button import MonoButtonElement
 from .mono_encoder import MonoEncoderElement
 from .device_navigator import *
+from .view_controller import SpecialViewControlComponent
+from .session_ring import SpecialSessionRingComponent, get_yt_linked_session_ring_instances
+from .session import SpecialSessionComponent
+from .session_navigation import SpecialSessionNavigationComponent
+from .transport import SpecialTransportComponent
+from .constants import *
+from .utilities import YaeltexSettings
+from .control_surface import YaeltexControlSurface
 from .debug import initialize_debug
 logger = logging.getLogger(__name__)
-debug = initialize_debug()
 
-# DEBUG = False
-# try:
-# 	from aumhaa.v2.base import initialize_debug
-# except:
-# 	def log_flattened_arguments(*a, **k):
-# 		args = ''
-# 		for item in a:
-# 			args = args + str(item) + ' '
-# 		logger.info(args)
-# 	def initialize_debug():
-# 		return log_flattened_arguments if DEBUG else no_debug
+LOCAL_DEBUG = False
+debug = initialize_debug(local_debug = LOCAL_DEBUG)
 
 
-MIDI_NOTE_TYPE = 0
-MIDI_CC_TYPE = 1
-MIDI_PB_TYPE = 2
-MIDI_MSG_TYPES = (MIDI_NOTE_TYPE, MIDI_CC_TYPE, MIDI_PB_TYPE)
-MIDI_NOTE_ON_STATUS = 144
-MIDI_NOTE_OFF_STATUS = 128
-MIDI_CC_STATUS = 176
-MIDI_PB_STATUS = 224
+class YaeltexUniversal(YaeltexControlSurface):
 
-
-def is_device(device):
-	return (not device is None and isinstance(device, Live.Device.Device) and hasattr(device, 'name'))
-
-
-def make_pad_translations(chan):
-	return tuple((x%4, int(x/4), x+16, chan) for x in range(16))
-
-
-def return_empty():
-	return []
-
-if initialize_debug:
-	debug = initialize_debug()
-
-
-class LinkedSessionInstances(object):
-	# _active_instances = []
-	# _linked_session_instances = []
-	# _minimal_track_offset = -1
-	# _minimal_scene_offset = -1
-	def __init__(self):
-		self._active_instances = []
-		self._linked_session_instances = []
-		self._minimal_track_offset = -1
-		self._minimal_scene_offset = -1
-
-
-
-def get_yt_linked_session_ring_instances():
-	# debug('BUILTINS access....')
-	if isinstance(__builtins__, dict):
-		if not 'yt_linked_session_ring_instances' in list(__builtins__.keys()) or not hasattr(__builtins__['yt_linked_session_ring_instances'], '_active_instances'):
-			__builtins__['yt_linked_session_ring_instances'] = LinkedSessionInstances()
-	else:
-		if not hasattr(__builtins__, 'yt_linked_session_ring_instances') or not hasattr(__builtins__['yt_linked_session_ring_instances'], '_active_instances'):
-			setattr(__builtins__, 'yt_linked_session_ring_instances', LinkedSessionInstances())
-	return __builtins__['yt_linked_session_ring_instances']
-
-
-class SpecialViewControlComponent(ViewControlComponent):
-
-
-	def __init__(self, *a, **k):
-		super(SpecialViewControlComponent, self).__init__(*a, **k)
-		self._basic_scroll_scenes = ScrollComponent(BasicSceneScroller())
-		self.register_slot(self.song, self._basic_scroll_scenes.update, 'scenes')
-		self.register_slot(self.song.view, self._basic_scroll_scenes.update, 'selected_scene')
-
-
-	def set_scene_select_dial(self, dial):
-		self._on_scene_select_dial_value.subject = dial
-
-
-	@listens('value')
-	def _on_scene_select_dial_value(self, value):
-		debug('_on_scene_select_dial_value', value)
-		self._basic_scroll_scenes.scroll_up() if value < 65 else self._basic_scroll_scenes.scroll_down()
-
-
-	def set_track_select_dial(self, dial):
-		self._on_track_select_dial_value.subject = dial
-
-
-	@listens('value')
-	def _on_track_select_dial_value(self, value):
-		debug('_on_scene_select_dial_value', value)
-		self._scroll_tracks.scroll_up() if value < 65 else self._scroll_tracks.scroll_down()
-
-
-class SpecialSessionRingComponent(SessionRingComponent):
-
-	_linked_session_ring = None
-	_linked_session_instances = []
-	_minimal_track_offset = -1
-	_minimal_scene_offset = -1
-
-	# @listens('track_offset')
-	# def _on_linked_track_offset_changed(self, track_offset):
-	# 	self.track_offset = track_offset
-	#
-	# @listens('scene_offset')
-	# def _on_linked_scene_offset_changed(self, scene_offset):
-	# 	self.scene_offset = scene_offset
-
-	def __init__(self, script, *a, **k):
-		self._script = script
-		self._snap_offsets = True
-		# self.__is_linked = False
-		super(SpecialSessionRingComponent, self).__init__(*a, **k)
-
-	# def _is_linked(self):
-	# 	return self.__is_linked
-
-
-	@listens('offset')
-	def _on_linked_offset_changed(self, track_offset, scene_offset):
-		debug('new linked offset:', track_offset, scene_offset)
-		self.set_offsets(track_offset, scene_offset)
-
-	# def set_linked_session_ring(self, session_ring):
-	# 	self._linked_session_ring = session_ring
-	# 	# self._on_linked_track_offset_changed.subject = self._linked_session_ring
-	# 	# self._on_linked_scene_offset_changed.subject = self._linked_session_ring
-	# 	self._on_linked_offset_changed.subject = self._linked_session_ring
-
-	def _globalInstances(self):
-		return get_yt_linked_session_ring_instances()
-
-
-	def link_with_track_offset(self, track_offset):
-		if self._is_linked():
-			self._unlink()
-		self.set_offsets(track_offset, self.scene_offset)
-		self._link()
-
-	def unlink(self):
-		if self._is_linked():
-			self._unlink()
-
-	def _is_linked(self):
-		# return self in SpecialSessionRingComponent._linked_session_instances
-		return self in self._globalInstances()._linked_session_instances
-
-	def _link(self):
-		# SpecialSessionRingComponent._linked_session_instances.append(self)
-		self._globalInstances()._linked_session_instances.append(self)
-
-	def _unlink(self):
-		# SpecialSessionRingComponent._linked_session_instances.remove(self)
-		self._globalInstances()._linked_session_instances.remove(self)
-
-	# def set_offsets(self, track_offset, scene_offset):
-	# 	debug('set_offsets', track_offset, scene_offset)
-	# 	if self._is_linked():
-	# 		debug('sending to linked delegation...')
-	# 		self._perform_offset_change(track_offset - self._track_offset, scene_offset - self._scene_offset)
-	# 	else:
-	# 		super(SpecialSessionRingComponent, self).set_offsets(track_offset, scene_offset)
-
-	def move(self, tracks, scenes):
-		if self._is_linked():
-			debug('sending to linked delegation...')
-			self._perform_offset_change(tracks, scenes)
-		else:
-			if self._snap_offsets:
-				tracks, scenes = self._snapped_offsets(tracks, scenes)
-			self._session_ring.move(tracks, scenes)
-			self._update_highlight()
-			self.notify_offset(self._session_ring.track_offset, self._session_ring.scene_offset)
-			self.notify_tracks()
-
-	@staticmethod
-	def _perform_offset_change(track_increment, scene_increment):
-		debug('_perform_offset_change')
-		instanceObject = get_yt_linked_session_ring_instances()
-		scenes = Live.Application.get_application().get_document().scenes
-		instances_covering_session = 0
-		found_negative_offset = False
-		minimal_track_offset = -1
-		minimal_scene_offset = -1
-		for instance in instanceObject._linked_session_instances:
-			new_track_offset = instance.track_offset + track_increment
-			new_scene_offset = instance.scene_offset + scene_increment
-			if new_track_offset >= 0:
-				if new_scene_offset >= 0:
-					if new_track_offset < len(instance.tracks_to_use()) and new_scene_offset < len(scenes):
-						instances_covering_session += 1
-						if minimal_track_offset < 0:
-							minimal_track_offset = new_track_offset
-						else:
-							minimal_track_offset = min(minimal_track_offset, new_track_offset)
-						if minimal_scene_offset < 0:
-							minimal_scene_offset = new_scene_offset
-						else:
-							minimal_scene_offset = min(minimal_scene_offset, new_scene_offset)
-					else:
-						found_negative_offset = True
-						break
-
-		if not found_negative_offset:
-			if instances_covering_session > 0:
-				instanceObject._minimal_track_offset = int(minimal_track_offset)
-				instanceObject._minimal_scene_offset = int(minimal_scene_offset)
-				for instance in instanceObject._linked_session_instances:
-					if instance._snap_offsets:
-						tracks, scenes = instance._snapped_offsets(track_increment, scene_increment)
-					instance._session_ring.move(track_increment, scene_increment)
-					instance._update_highlight()
-					instance.notify_offset(instance._session_ring.track_offset, instance._session_ring.scene_offset)
-					instance.notify_tracks()
-
-
-
-class SpecialSessionComponent(SessionComponent):
-	selected_clip_launch_button = ButtonControl(color = "Session.SelectedClipLaunch")
-	selected_scene_launch_button = ButtonControl(color = "Session.SelectedSceneLaunch")
-
-	def set_scene_launch_buttons(self, buttons):
-		assert(not buttons or buttons.width() == self._session_ring.num_scenes and buttons.height() == 1)
-		if buttons:
-			for button, (x, _) in buttons.iterbuttons():
-				scene = self.scene(x)
-				#debug('setting scene launch for button:', button, 'scene:', scene)
-				scene.set_launch_button(button)
-
-		else:
-			for x in range(self._session_ring.num_scenes):
-				scene = self.scene(x)
-				scene.set_launch_button(None)
-
-	@selected_clip_launch_button.pressed
-	def selected_clip_launch_button(self, *a, **k):
-		self.song.view.highlighted_clip_slot.fire()
-
-	@selected_scene_launch_button.pressed
-	def selected_clip_launch_button(self, *a, **k):
-		self.song.view.selected_scene.fire()
-
-
-
-class SpecialSessionNavigationComponent(SessionNavigationComponent):
-
-
-	def set_track_select_dial(self, dial):
-		self._on_track_select_dial_value.subject = dial
-
-
-	@listens('value')
-	def _on_track_select_dial_value(self, value):
-		#debug('_on_track_select_dial_value:', value)
-		#self._can_bank_left() and self._bank_left() if value == 127 else self._can_bank_right() and self._bank_right()
-		self._horizontal_banking.can_scroll_up() and self._horizontal_banking.scroll_up() if value == 127 else self._horizontal_banking.can_scroll_down() and self._horizontal_banking.scroll_down()
-
-	def set_scene_bank_nav_dial(self, dial):
-		self._on_scene_bank_nav_dial_value.subject = dial
-
-	@listens('value')
-	def _on_scene_bank_nav_dial_value(self, value):
-		debug('_on_scene_bank_nav_dial_value', value)
-		self._vertical_banking.can_scroll_up() and self._vertical_banking.scroll_up() if value < 65 else self._vertical_banking.can_scroll_down() and self._vertical_banking.scroll_down()
-
-
-	def set_track_bank_nav_dial(self, dial):
-		self._on_track_bank_nav_dial_value.subject = dial
-
-
-	@listens('value')
-	def _on_track_bank_nav_dial_value(self, value):
-		debug('_on_scene_bank_nav_dial_value', value)
-		self._horizontal_banking.can_scroll_up() and self._horizontal_banking.scroll_up() if value < 65 else self._horizontal_banking.can_scroll_down() and self._horizontal_banking.scroll_down()
-
-
-class SpecialTransportComponent(TransportComponent):
-
-	new_tap_tempo_button = ButtonControl()
-
-	# def _update_stop_button_color(self):
-	# 	self._stop_button.color = 'Transport.StopOn' if self._play_toggle.is_toggled else 'Transport.StopOff'
-
-	@new_tap_tempo_button.pressed
-	def tap_tempo_button(self, button):
-		debug('tap_tempo')
-		self.song.tap_tempo()
-
-
-class MonoEncoderElement(EncoderElement):
-
-	def __init__(self, name = 'MonoEncoder', num = 0, script = None, mapping_feedback_delay = 1, monobridge = None, *a, **k):
-		super(MonoEncoderElement, self).__init__(map_mode=Live.MidiMap.MapMode.absolute, *a, **k)
-
-
-class MonoButtonElement(ButtonElement):
-
-	def __init__(self, name = 'MonoButton', script = None, color_map = None, monobridge = None, *a, **k):
-		super(MonoButtonElement, self).__init__(name = name, *a, **k)
-		# self._color_map = color_map or [2, 64, 4, 8, 16, 127, 32]
-# 		self._num_colors = 7
-# 		self._num_flash_states = 18
-# 		self._flash_state = 0
-# 		self._color = 0
-# 		self._on_value = 127
-# 		self._off_value = 0
-# 		self._darkened = 0
-# 		self._is_enabled = True
-#
-	# def turn_on(self, force = False):
-	# 	self.force_next_send()
-	# 	if self._on_value in range(0, 128):
-	# 		self.send_value(self._on_value)
-	# 	else:
-	# 		try:
-	# 			color = self._skin[self._on_value]
-	# 			color.draw(self)
-	# 		except SkinColorMissingError:
-	# 			#super(MonoButtonElement, self).turn_on()
-	# 			debug('skin color missing', self._on_value)
-	# 			self.send_value(127)
-	#
-	#
-	# def turn_off(self, force = False):
-	# 	self.force_next_send()
-	# 	#debug('turn off:', self._off_value)
-	# 	if self._off_value in range(0, 128):
-	# 		self.send_value(self._off_value)
-	# 	else:
-	# 		try:
-	# 			color = self._skin[self._off_value]
-	# 			color.draw(self)
-	# 		except SkinColorMissingError:
-	# 			#super(MonoButtonElement, self).turn_off()
-	# 			debug('skin color missing', self._off_value)
-	# 			self.send_value(0)
-
-	def set_light(self, value):
-		try:
-			super(MonoButtonElement, self).set_light(value)
-		except:
-			debug('set_light exception for:', self._name if hasattr(self, '_name') else None, 'value:', value)
-
-
-
-class YaeltexUniversal(ControlSurface):
-
-	_timer = 0
-	_touched = 0
-	flash_status = 1
-	# _active_instances = []
 
 	def _combine_active_instances():
 		debug('_combine_active_instances...')
@@ -400,13 +58,17 @@ class YaeltexUniversal(ControlSurface):
 			instance._activate_combination_mode(track_offset, support_devices)
 			track_offset += instance._session_ring.num_tracks
 
+
 	_combine_active_instances = staticmethod(_combine_active_instances)
+
 
 	def _activate_combination_mode(self, track_offset, support_devices):
 		self._session_ring.link_with_track_offset(track_offset)
 
+
 	def _should_combine(self):
 		return DO_COMBINE
+
 
 	def _do_combine(self):
 		if self._should_combine():
@@ -415,6 +77,7 @@ class YaeltexUniversal(ControlSurface):
 				globalInstances._active_instances = sorted((globalInstances._active_instances + [self]),
 				  key=(lambda x: x._instance_id))
 				YaeltexUniversal._combine_active_instances()
+
 
 	def _do_uncombine(self):
 		globalInstances = get_yt_linked_session_ring_instances()
@@ -428,6 +91,7 @@ class YaeltexUniversal(ControlSurface):
 		self.__c_instance = c_instance
 		self._instance_id = c_instance.instance_identifier()
 		# debug('instance_id:', self._instance_id)
+		# self._connected = True
 		super(YaeltexUniversal, self).__init__(c_instance)
 		self._skin = Skin(YAELTEXColors)
 		with self.component_guard():
@@ -437,15 +101,32 @@ class YaeltexUniversal(ControlSurface):
 			self._setup_view_control()
 			self._setup_transport_control()
 			self._setup_device_control()
-			# self._setup_session_recording_component()
-			# self._setup_main_modes()
-		# self._main_modes.selected_mode = 'Main'
-		# self._main_modes.set_enabled(True)
+		# 	# self._setup_session_recording_component()
+		# 	# self._setup_main_modes()
+		# # self._main_modes.selected_mode = 'Main'
+		# # self._main_modes.set_enabled(True)
 		self._do_combine()
 
 
+	def _initialize_script(self):
+		debug('YaeltexUniversal _initialize_script')
+		# with self.component_guard():
+		# 	self._setup_controls()
+		# 	self._setup_session_control()
+		# 	self._setup_mixer_control()
+		# 	self._setup_view_control()
+		# 	self._setup_transport_control()
+		# 	self._setup_device_control()
+		# 	# self._setup_session_recording_component()
+		# 	# self._setup_main_modes()
+		# # self._main_modes.selected_mode = 'Main'
+		# # self._main_modes.set_enabled(True)
+		# self._do_combine()
+		super(YaeltexUniversal, self)._initialize_script()
+
 	def instance_identifier(self):
 		return self.__c_instance.instance_identifier
+
 
 	def _setup_controls(self):
 		is_momentary = True
@@ -614,7 +295,6 @@ class YaeltexUniversal(ControlSurface):
 		self._crossfade_assign_button_matrix = ButtonMatrixElement(name = 'CrossfadeAssignMatrix', rows = [self._crossfade_assign_buttons])
 
 
-
 	def _setup_autoarm(self):
 		self._auto_arm = AutoArmComponent(name='Auto_Arm')
 		self._auto_arm.can_auto_arm_track = self._can_auto_arm_track
@@ -699,8 +379,8 @@ class YaeltexUniversal(ControlSurface):
 			mute_buttons = self._mute_button_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
 			arm_buttons = self._arm_button_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
 			solo_buttons = self._solo_button_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
-			track_select_buttons = self._select_button_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
-			# arming_track_select_buttons = self._select_button_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
+			# track_select_buttons = self._select_button_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
+			arming_track_select_buttons = self._select_button_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
 			pan_controls = self._pan_control_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
 			send_controls = self._selected_send_control_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
 			return_controls = self._return_volume_control_matrix.submatrix[:SESSION_BOX_SIZE[0],:],
@@ -786,33 +466,6 @@ class YaeltexUniversal(ControlSurface):
 		routing = track.current_input_routing
 		return routing == 'Ext: All Ins' or routing == 'All Ins' or routing.startswith('YaeltexUniversal Input')
 		#self._main_modes.selected_mode in ['Sends', 'Device'] and
-
-
-	# def flash(self):
-	# 	if(self.flash_status > 0):
-	# 		for control in self.controls:
-	# 			if isinstance(control, MonoButtonElement):
-	# 				control.flash(self._timer)
-		# pass
-
-	# def update_display(self):
-	# 	super(ControlSurface, self).update_display()
-	# 	self._timer = (self._timer + 1) % 256
-	# 	self.flash()
-
-
-	def touched(self):
-		pass
-
-
-	def check_touch(self):
-		pass
-
-	# def connect_script_instances(self, instanciated_scripts):
-	# 	debug('connect script instances:', instanciated_scripts)
-	# 	for s in instanciated_scripts:
-	# 		if isinstance(s, YaeltexUniversal):
-	# 			debug('found another instance of YaeltexUniversal')
 
 
 	def disconnect(self):

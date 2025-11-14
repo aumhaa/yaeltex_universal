@@ -9,9 +9,9 @@ import sys
 PVERS = sys.version_info.major
 
 if PVERS>=3:
-    from itertools import zip_longest
+	from itertools import zip_longest
 else:
-    from itertools import izip_longest as zip_longest
+	from itertools import izip_longest as zip_longest
 
 from itertools import product, chain
 from ableton.v2.base import listens, listens_group, EventObject, liveobj_valid, nop, clamp, listenable_property, liveobj_changed
@@ -20,14 +20,16 @@ from ableton.v2.control_surface import DeviceBankRegistry
 from ableton.v2.control_surface.components import ChannelStripComponent as ChannelStripComponentBase, MixerComponent as MixerComponentBase
 from ableton.v2.control_surface import ParameterSlot
 
+from Push2.colors import translate_color_index
+
 from _Generic.Devices import *
 
 from .device import DeviceComponent
 from .debug import *
 from .Map import VU_METER_LOG_SCALING as VU_METER_LOG_SCALING
 
-
-debug = initialize_debug()
+LOCAL_DEBUG = False
+debug = initialize_debug(local_debug = LOCAL_DEBUG)
 
 EQ_DEVICES = {'Eq8': {'Gains': [ '%i Gain A' % (index + 1) for index in range(8) ]},
  'FilterEQ3': {'Gains': ['GainHi', 'GainMid', 'GainLo'],
@@ -186,12 +188,16 @@ class MonoChannelStripComponent(ChannelStripComponentBase):
 		self._track_property_slots.append(make_property_slot('output_meter_level'))
 		self._track_property_slots.append(make_property_slot('output_meter_left'))
 		self._track_property_slots.append(make_property_slot('output_meter_right'))
+		self._track_property_slots.append(make_property_slot('implicit_arm'))
+
+		self._playing_clip = None
 
 		# def make_control_slot(name):
 		#     return self.register_slot(None, getattr(self, u'_%s_value' % name), u'value')
 		self.register_slot(None, getattr(self, '_output_meter_level_value'), 'value')
 		self.register_slot(None, getattr(self, '_output_meter_left_value'), 'value')
 		self.register_slot(None, getattr(self, '_output_meter_right_value'), 'value')
+		self.register_slot(None, getattr(self, '_implicit_arm_value'), 'value')
 
 		self._device_provider = [None for index in range(8)]
 		self._device_component = [None for index in range(8)]
@@ -203,10 +209,16 @@ class MonoChannelStripComponent(ChannelStripComponentBase):
 		self._fold_task = self._tasks.add(Task.sequence(Task.wait(TRACK_FOLD_DELAY), Task.run(self._do_fold_track))).kill()
 		self._vu_sum_task = self._tasks.add(Task.sequence(Task.repeat(self._vu_sum_callback)))
 		self._on_arm_state_changed.subject = self._track_state
-		self._ChannelStripComponent__on_selected_track_changed.subject = None
-		self._ChannelStripComponent__on_selected_track_changed = self.__on_selected_track_changed
-		self.__on_selected_track_changed.subject = self.song.view
-		self.__on_selected_track_changed()
+		# self._ChannelStripComponent__on_selected_track_changed.subject = None
+		# self._ChannelStripComponent__on_selected_track_changed = self.__on_selected_track_changed
+		# self.__on_selected_track_changed.subject = self.song.view
+		# self.__on_selected_track_changed()
+		# self._on_selected_track_changed.subject = self.song.view
+		# self._on_selected_track_changed()
+		# self._on_instance_selected_track_changed.subject = self.song.view
+		# self._on_instance_selected_track_changed()
+		self._update_playing_clip()
+		
 
 
 
@@ -228,23 +240,52 @@ class MonoChannelStripComponent(ChannelStripComponentBase):
 					return find_nearest_color(self._strip_rgb_table, color)
 				else:
 					return self._selected_off_color
-
-
+		else:
+			return self._selected_off_color
 
 	# def _color_value(self, slot_or_clip):
-    #     color = slot_or_clip.color
-    #     try:
-    #         return self._clip_palette[color]
-    #     except (KeyError, IndexError):
-    #         if self._track_rgb_table is not None:
-    #             return find_nearest_color(self._track_rgb_table, color)
-    #         else:
+	#     color = slot_or_clip.color
+	#     try:
+	#         return self._clip_palette[color]
+	#     except (KeyError, IndexError):
+	#         if self._track_rgb_table is not None:
+	#             return find_nearest_color(self._track_rgb_table, color)
+	#         else:
 	# 			return self._default_color
 
+	@listens('playing_slot_index')
+	def __on_playing_slot_index_changed(self):
+		debug('channelstrip.__on_playing_slot_index_changed')
+		self._update_playing_clip()
+
+
+	def _update_playing_clip(self):
+		if liveobj_valid(self._track) and self._track.can_be_armed:
+			clip = self._track.clip_slots[self._track.playing_slot_index].clip
+			self._playing_clip = clip if liveobj_valid(clip) else None
+		self.notify_playing_clip(self._playing_clip)
+
+	@listenable_property
+	def playing_clip(self):
+		return self._playing_clip
 
 	
+	# @listens('selected_track')
+	# def __on_selected_track_changed(self):
+	# 	if liveobj_valid(self._track) or self.empty_color == None:
+	# 		if self.song.view.selected_track == self._track:
+	# 			self.select_button.color = self._selected_on_color
+	# 		else:
+	# 			self.select_button.color = self._selected_off_color
+	# 	else:
+	# 		self.select_button.color = self.empty_color
+	# 	self._update_track_button()
+	# 	self._update_device_selection()
+
+
 	@listens('selected_track')
-	def __on_selected_track_changed(self):
+	def _on_selected_track_changed(self):
+		super(MonoChannelStripComponent,self)._on_selected_track_changed()
 		if liveobj_valid(self._track) or self.empty_color == None:
 			if self.song.view.selected_track == self._track:
 				self.select_button.color = self._selected_on_color
@@ -252,15 +293,33 @@ class MonoChannelStripComponent(ChannelStripComponentBase):
 				self.select_button.color = self._selected_off_color
 		else:
 			self.select_button.color = self.empty_color
+		# self._tasks.add(Task.sequence(Task.delay(1), Task.run(self._update_track_button)))
 		self._update_track_button()
 		self._update_device_selection()
+
+
+	# @listens('selected_track')
+	# def _on_instance_selected_track_changed(self):
+	# 	if liveobj_valid(self._track) or self.empty_color == None:
+	# 		if self.song.view.selected_track == self._track:
+	# 			self.select_button.color = self._selected_on_color
+	# 		else:
+	# 			self.select_button.color = self._selected_off_color
+	# 	else:
+	# 		self.select_button.color = self.empty_color
+	# 	# self._tasks.add(Task.sequence(Task.delay(1), Task.run(self._update_track_button)))
+	# 	self._update_track_button()
+	# 	self._update_device_selection()
 
 
 	def set_track(self, track):
 		assert(isinstance(track, (type(None), Live.Track.Track)))
 		self._on_devices_changed.subject = track
+		self.__on_playing_slot_index_changed.subject = track
 		self._update_device_selection()
 		self._detect_eq(track)
+		self._update_playing_clip()
+		self._track_state.set_track(self._track)
 		super(MonoChannelStripComponent,self).set_track(track)
 
 
@@ -526,9 +585,15 @@ class MonoChannelStripComponent(ChannelStripComponentBase):
 
 	@listens('arm')
 	def _on_arm_state_changed(self):
-		if self.is_enabled() and self._track:
+		debug('MonoChannelStripComponent._on_arm_state_changed')
+		if self.is_enabled() and liveobj_valid(self._track):
+			debug('MonoChannelStripComponent._on_arm_state_changed updating track button')
 			self._update_track_button()
 
+	# @listens('implicit_arm')
+	def _on_implicit_arm_changed(self):
+		if self.is_enabled() and liveobj_valid(self._track):
+			self._update_track_button()
 
 	def set_arming_select_button(self, button):
 		button and button.reset()
@@ -565,6 +630,12 @@ class MonoChannelStripComponent(ChannelStripComponentBase):
 		pass
 
 
+	@listens('value')
+	def _implicit_arm_value(self, value):
+		debug('implicit_arm_value:', value)
+		# self._update_track_button()
+
+
 	def _do_toggle_arm(self, exclusive = False):
 		if self._track.can_be_armed:
 			self._track.arm = not self._track.arm
@@ -583,7 +654,49 @@ class MonoChannelStripComponent(ChannelStripComponentBase):
 		pass
 
 
+	# def _update_track_button(self):
+	# 	if self.is_enabled():
+	# 		if self._arming_select_button != None:
+	# 			if not liveobj_valid(self._track):
+	# 				self._arming_select_button.set_light(self.empty_color)
+	# 			elif self._track.can_be_armed and (self._track.arm or self._track.implicit_arm):
+	# 				if self._track == self.song.view.selected_track:
+	# 					if self._track.arm:
+	# 						self._arming_select_button.set_light(self._arm_selected_color)
+	# 					else:
+	# 						self._arming_select_button.set_light(self._arm_selected_implicit_color)
+	# 				else:
+	# 					self._arming_select_button.set_light(self._arm_on_color)
+	# 			elif self._track == self.song.view.selected_track:
+	# 				self._arming_select_button.set_light(self._selected_on_color)
+	# 			else:
+	# 				self._arming_select_button.set_light(self._selected_off_color)
+
+	def _update_select_button(self):
+		debug('MonoChannelStripComponent._update_select_button')
+		# if self.is_enabled():
+		# 	if self.select_button != None:
+		# 		if not liveobj_valid(self._track):
+		# 			self.select_button.set_light(self.empty_color)
+		# 		elif self._track == self.song.view.selected_track:
+		# 			self.select_button.set_light(self._selected_on_color)
+		# 		else:
+		# 			self.select_button.set_light(self._selected_off_color)
+		if self.is_enabled():
+			if liveobj_valid(self._track) or self.empty_color == None:
+				if self.song.view.selected_track == self._track:
+					self.select_button.color = self._selected_on_color
+				else:
+					self.select_button.color = self._selected_off_color
+			else:
+				self.select_button.color = self.empty_color
+		self._update_device_selection()
+		self._update_track_button()
+		# self._tasks.add(Task.sequence(Task.delay(2), Task.run(self._update_track_button)))
+
+
 	def _update_track_button(self):
+		debug('MonoChannelStripComponent._update_track_button')
 		if self.is_enabled():
 			if self._arming_select_button != None:
 				if not liveobj_valid(self._track):
@@ -599,8 +712,11 @@ class MonoChannelStripComponent(ChannelStripComponentBase):
 				elif self._track == self.song.view.selected_track:
 					self._arming_select_button.set_light(self._selected_on_color)
 				else:
-					self._arming_select_button.set_light(self._selected_off_color)
-
+					# self._arming_select_button.set_light(self._selected_off_color)
+					try:
+						self._arming_select_button.set_light(self._color_for_track(self._track))
+					except:
+						debug('failed to set arming select button color')	
 
 	def disconnect(self):
 		for index in range(8):

@@ -4,7 +4,8 @@
 from ableton.v2.control_surface.elements.color import Color
 from .debug import initialize_debug
 
-debug = initialize_debug()
+LOCAL_DEBUG = False
+debug = initialize_debug(local_debug=LOCAL_DEBUG)
 
 
 class MonoColor(Color):

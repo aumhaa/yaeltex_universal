@@ -6,42 +6,28 @@ from .debug import *
 LOCAL_DEBUG = False
 debug = initialize_debug(local_debug = LOCAL_DEBUG)
 
-# class PRODUCTS:
-# 	BRAIN = 1
-# 	OHM64 = 2
-# 	BLOCK = 3
-# 	CODE = 4
-# 	MCD = 5 
-# 	MCP = 6 
-# 	OHMRGB = 7
-# 	CNTRLR = 8
-# 	BRAIN2 = 9
-# 	ENLIGHTEN = 10
-# 	ALIAS8 = 11
-# 	BASE = 12
-# 	BRAINJR = 13
-# 	DS1 = 16
-# 	BASEII = 17
-# 	MINIM = 21
-
 RGB_COLORMAP = [2, 64, 4, 8, 16, 127, 32]
 
-QUERYSURFACE = (240, 126, 127, 6, 1, 247)
+# QUERYSURFACE = (240, 126, 127, 6, 1, 247)
 
-NEWQUERYSURFACE = (240, 0, 1, 97, 0, 7, 8, 247)
+# NEWQUERYSURFACE = (240, 0, 1, 97, 0, 7, 8, 247)
 
-CALLS = {'set_local_control':8,
-		'set_pad_pressure_output_type':10,
-		'set_encoder_mapping':11,
-		'reverse_crossfader':15,
-		'set_encoder_encosion_mode':17,
-		'set_encoder_speed':30,
-		'set_analog_filter_mode':41,
-		'set_fader_led_colors':61,
-		'set_streaming_enabled':62,
-		'set_pad_output_type':66,
-		'set_function_button_leds_linked':68,
-		'set_capacitive_fader_note_output_enabled':69,
+YAELTEX_QUERYSURFACE = (240, 121, 116, 120, 0, 0, 0, 2, 247)
+
+
+CALLS = {
+		# 'set_local_control':8,
+		# 'set_pad_pressure_output_type':10,
+		# 'set_encoder_mapping':11,
+		# 'reverse_crossfader':15,
+		# 'set_encoder_encosion_mode':17,
+		# 'set_encoder_speed':30,
+		# 'set_analog_filter_mode':41,
+		# 'set_fader_led_colors':61,
+		# 'set_streaming_enabled':62,
+		# 'set_pad_output_type':66,
+		# 'set_function_button_leds_linked':68,
+		# 'set_capacitive_fader_note_output_enabled':69,
 		}
 
 def fallback_send_midi(message = None, *a, **k):
@@ -70,11 +56,7 @@ class YaeltexSettings(object):
 	
 
 	def query_surface(self):
-		self._send_midi(QUERYSURFACE)
-	
-
-	def new_query_surface(self):
-		self._send_midi(NEWQUERYSURFACE)
+		self._send_midi(YAELTEX_QUERYSURFACE)
 	
 
 	def set_model(self, model):
@@ -96,7 +78,9 @@ class DescriptorBank(object):
 
 	def __init__(self, name = None, *a, **k):
 		super(DescriptorBank, self).__init__()
-	
+
+
+
 
 
 

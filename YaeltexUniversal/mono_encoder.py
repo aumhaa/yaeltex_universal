@@ -4,165 +4,164 @@
 import Live
 
 from ableton.v2.control_surface.elements.encoder import EncoderElement
-from ableton.v2.control_surface.input_control_element import InputControlElement
-from ableton.v2.control_surface.control_element import NotifyingControlElement
+# from ableton.v2.control_surface.input_control_element import InputControlElement
+# from ableton.v2.control_surface.control_element import NotifyingControlElement
 
 # from .mono_bridge import MonoBridgeProxy
+from .constants import *
 from .debug import initialize_debug
 
-debug = initialize_debug()
+LOCAL_DEBUG = False
+debug = initialize_debug(local_debug = LOCAL_DEBUG)
 
-MIDI_NOTE_TYPE = 0
-MIDI_CC_TYPE = 1
-MIDI_PB_TYPE = 2
-MIDI_MSG_TYPES = (MIDI_NOTE_TYPE,
- MIDI_CC_TYPE,
- MIDI_PB_TYPE)
-MIDI_NOTE_ON_STATUS = 144
-MIDI_NOTE_OFF_STATUS = 128
-MIDI_CC_STATUS = 176
-MIDI_PB_STATUS = 224
 
 class MonoEncoderElement(EncoderElement):
-	__module__ = __name__
-	__doc__ = ' Class representing a slider on the controller '
 
-
-	def __init__(self, name = 'MonoEncoder', num = 0, script = None, mapping_feedback_delay = 1, *a, **k):
+	def __init__(self, name = 'MonoEncoder', num = 0, script = None, mapping_feedback_delay = 1, monobridge = None, *a, **k):
 		super(MonoEncoderElement, self).__init__(map_mode=Live.MidiMap.MapMode.absolute, *a, **k)
-		self._mapping_feedback_delay = mapping_feedback_delay
-		self.num = num
-		self.name = name
-		self._parameter = None
-		self._script = script
-		self._is_enabled = True
-		# self._paramter_lcd_name = ' '
-		# self._parameter_last_value = None
-		self._mapped_to_midi_velocity = False
-		# if not monobridge is None:
-		# 	self._monobridge = monobridge
-		# elif hasattr(script, '_monobridge'):
-		# 	self._monobridge = script._monobridge
-		# else:
-		# 	self._monobridge = MonoBridgeProxy()
-		self.set_report_values(True, False)
 
 
-	# def _report_value(self, value, is_input):
-	# 	self._script.touched()
+
+# class OriginalMonoEncoderElement(EncoderElement):
+# 	__module__ = __name__
+# 	__doc__ = ' Class representing a slider on the controller '
 
 
-	def disconnect(self):
-		self.remove_parameter_listener(self._parameter)
-		super(MonoEncoderElement, self).disconnect()
+# 	def __init__(self, name = 'MonoEncoder', num = 0, script = None, mapping_feedback_delay = 1, *a, **k):
+# 		super(MonoEncoderElement, self).__init__(map_mode=Live.MidiMap.MapMode.absolute, *a, **k)
+# 		self._mapping_feedback_delay = mapping_feedback_delay
+# 		self.num = num
+# 		self.name = name
+# 		self._parameter = None
+# 		self._script = script
+# 		self._is_enabled = True
+# 		# self._paramter_lcd_name = ' '
+# 		# self._parameter_last_value = None
+# 		self._mapped_to_midi_velocity = False
+# 		# if not monobridge is None:
+# 		# 	self._monobridge = monobridge
+# 		# elif hasattr(script, '_monobridge'):
+# 		# 	self._monobridge = script._monobridge
+# 		# else:
+# 		# 	self._monobridge = MonoBridgeProxy()
+# 		self.set_report_values(True, False)
 
 
-	def connect_to(self, parameter):
-		if parameter == None:
-			self.release_parameter()
-		else:
-			self._mapped_to_midi_velocity = False
-			assignment = parameter
-			try:
-				if(str(parameter.name) == str('Track Volume')):		#checks to see if parameter is track volume
-					if(parameter.canonical_parent.canonical_parent.has_audio_output is False):		#checks to see if track has audio output
-						if(len(parameter.canonical_parent.canonical_parent.devices) > 0):
-							if(str(parameter.canonical_parent.canonical_parent.devices[0].class_name)==str('MidiVelocity')):	#if not, looks for velicty as first plugin
-								assignment = parameter.canonical_parent.canonical_parent.devices[0].parameters[6]				#if found, assigns fader to its 'outhi' parameter
-								self._mapped_to_midi_velocity = True
-			except:
-				assignment = parameter
-			if not self._parameter_to_map_to is assignment:
-				#self.send_value(0, True)
-				#self.send_value(0)
-				pass
-			super(MonoEncoderElement, self).connect_to(assignment)
-			self.add_parameter_listener(self._parameter_to_map_to)
-			# if self._parameter_to_map_to is None:
-			# 	self.reset()
+# 	# def _report_value(self, value, is_input):
+# 	# 	self._script.touched()
 
 
-	def set_enabled(self, enabled):
-		self._is_enabled = enabled
-		self._request_rebuild()
+# 	def disconnect(self):
+# 		self.remove_parameter_listener(self._parameter)
+# 		super(MonoEncoderElement, self).disconnect()
 
 
-	def set_value(self, value):
-		if(self._parameter_to_map_to != None):
-			newval = float(value * (self._parameter_to_map_to.max - self._parameter_to_map_to.min)) + self._parameter_to_map_to.min
-			self._parameter_to_map_to.value = newval
-			return [value, str(self.mapped_parameter())]
-		else:
-			self.receive_value(int(value*127))
+# 	def connect_to(self, parameter):
+# 		if parameter == None:
+# 			self.release_parameter()
+# 		else:
+# 			self._mapped_to_midi_velocity = False
+# 			assignment = parameter
+# 			try:
+# 				if(str(parameter.name) == str('Track Volume')):		#checks to see if parameter is track volume
+# 					if(parameter.canonical_parent.canonical_parent.has_audio_output is False):		#checks to see if track has audio output
+# 						if(len(parameter.canonical_parent.canonical_parent.devices) > 0):
+# 							if(str(parameter.canonical_parent.canonical_parent.devices[0].class_name)==str('MidiVelocity')):	#if not, looks for velicty as first plugin
+# 								assignment = parameter.canonical_parent.canonical_parent.devices[0].parameters[6]				#if found, assigns fader to its 'outhi' parameter
+# 								self._mapped_to_midi_velocity = True
+# 			except:
+# 				assignment = parameter
+# 			if not self._parameter_to_map_to is assignment:
+# 				#self.send_value(0, True)
+# 				#self.send_value(0)
+# 				pass
+# 			super(MonoEncoderElement, self).connect_to(assignment)
+# 			self.add_parameter_listener(self._parameter_to_map_to)
+# 			# if self._parameter_to_map_to is None:
+# 			# 	self.reset()
 
 
-	def release_parameter(self):
-		if(self._parameter_to_map_to != None):
-			self.remove_parameter_listener(self._parameter_to_map_to)
-		super(MonoEncoderElement, self).release_parameter()
-		# self.send_value(0, True)
+# 	def set_enabled(self, enabled):
+# 		self._is_enabled = enabled
+# 		self._request_rebuild()
 
 
-	def script_wants_forwarding(self):
-		if not self._is_enabled:
-			return False
-		else:
-			return super(MonoEncoderElement, self).script_wants_forwarding()
+# 	def set_value(self, value):
+# 		if(self._parameter_to_map_to != None):
+# 			newval = float(value * (self._parameter_to_map_to.max - self._parameter_to_map_to.min)) + self._parameter_to_map_to.min
+# 			self._parameter_to_map_to.value = newval
+# 			return [value, str(self.mapped_parameter())]
+# 		else:
+# 			self.receive_value(int(value*127))
 
 
-	def forward_parameter_value(self):
-		if(not (type(self._parameter) is type(None))):
-			#new_value=int(((self._parameter.value - self._parameter.min) / (self._parameter.max - self._parameter.min))  * 127)
-			try:
-				parameter = str(self.mapped_parameter())
-			except:
-				parameter = ' '
-			# if(parameter!=self._parameter_last_value):
-			# 	#self._parameter_last_value = str(self.mapped_parameter())
-			# 	try:
-			# 		self._parameter_last_value = str(self.mapped_parameter())
-			# 	except:
-			# 		self._parameter_last_value = ' '
-				# self._monobridge.notification_to_bridge(self._parameter_lcd_name, self._parameter_last_value, self)
+# 	def release_parameter(self):
+# 		if(self._parameter_to_map_to != None):
+# 			self.remove_parameter_listener(self._parameter_to_map_to)
+# 		super(MonoEncoderElement, self).release_parameter()
+# 		# self.send_value(0, True)
 
 
-	def add_parameter_listener(self, parameter):
-		self._parameter = parameter
-		if parameter:
-			if isinstance(parameter, Live.DeviceParameter.DeviceParameter):
-				if str(parameter.original_name) == 'Track Volume' or self._mapped_to_midi_velocity is True:
-					try:
-						self._parameter_lcd_name = str(parameter.canonical_parent.canonical_parent.name)
-					except:
-						self._parameter_lcd_name = ' '
-				elif str(parameter.original_name) == 'Track Panning':
-					self._parameter_lcd_name = 'Pan'
-				else:
-					try:
-						self._parameter_lcd_name = str(parameter.name)
-					except:
-						self._parameter_lcd_name = ' '
-			#self._last_value(int(((self._parameter.value - self._parameter.min) / (self._parameter.max - self._parameter.min))  * 127))
-			#self._parameter_last_value = str(self.mapped_parameter())
-			# try:
-			# 	self._parameter_last_value = str(self.mapped_parameter())
-			# except:
-			# 	self._parameter_last_value = ' '
-			# self._monobridge.notification_to_bridge(self._parameter_lcd_name, self._parameter_last_value, self)
-			cb = lambda: self.forward_parameter_value()
-			parameter.add_value_listener(cb)
+# 	def script_wants_forwarding(self):
+# 		if not self._is_enabled:
+# 			return False
+# 		else:
+# 			return super(MonoEncoderElement, self).script_wants_forwarding()
 
 
-	def remove_parameter_listener(self, parameter):
-		self._parameter = None
-		#self._script.log_message('remove_parameter_listener ' + str(parameter.name + str(self.name)))
-		if parameter:
-			cb = lambda: self.forward_parameter_value()
-			if(parameter.value_has_listener is True):
-				parameter.remove_value_listener(cb)
-			# self._parameter_lcd_name = ' '
-			# self._parameter_last_value = ' '
-			# self._monobridge.notification_to_bridge(' ', ' ', self)
+# 	def forward_parameter_value(self):
+# 		if(not (type(self._parameter) is type(None))):
+# 			#new_value=int(((self._parameter.value - self._parameter.min) / (self._parameter.max - self._parameter.min))  * 127)
+# 			try:
+# 				parameter = str(self.mapped_parameter())
+# 			except:
+# 				parameter = ' '
+# 			# if(parameter!=self._parameter_last_value):
+# 			# 	#self._parameter_last_value = str(self.mapped_parameter())
+# 			# 	try:
+# 			# 		self._parameter_last_value = str(self.mapped_parameter())
+# 			# 	except:
+# 			# 		self._parameter_last_value = ' '
+# 				# self._monobridge.notification_to_bridge(self._parameter_lcd_name, self._parameter_last_value, self)
+
+
+# 	def add_parameter_listener(self, parameter):
+# 		self._parameter = parameter
+# 		if parameter:
+# 			if isinstance(parameter, Live.DeviceParameter.DeviceParameter):
+# 				if str(parameter.original_name) == 'Track Volume' or self._mapped_to_midi_velocity is True:
+# 					try:
+# 						self._parameter_lcd_name = str(parameter.canonical_parent.canonical_parent.name)
+# 					except:
+# 						self._parameter_lcd_name = ' '
+# 				elif str(parameter.original_name) == 'Track Panning':
+# 					self._parameter_lcd_name = 'Pan'
+# 				else:
+# 					try:
+# 						self._parameter_lcd_name = str(parameter.name)
+# 					except:
+# 						self._parameter_lcd_name = ' '
+# 			#self._last_value(int(((self._parameter.value - self._parameter.min) / (self._parameter.max - self._parameter.min))  * 127))
+# 			#self._parameter_last_value = str(self.mapped_parameter())
+# 			# try:
+# 			# 	self._parameter_last_value = str(self.mapped_parameter())
+# 			# except:
+# 			# 	self._parameter_last_value = ' '
+# 			# self._monobridge.notification_to_bridge(self._parameter_lcd_name, self._parameter_last_value, self)
+# 			cb = lambda: self.forward_parameter_value()
+# 			parameter.add_value_listener(cb)
+
+
+# 	def remove_parameter_listener(self, parameter):
+# 		self._parameter = None
+# 		#self._script.log_message('remove_parameter_listener ' + str(parameter.name + str(self.name)))
+# 		if parameter:
+# 			cb = lambda: self.forward_parameter_value()
+# 			if(parameter.value_has_listener is True):
+# 				parameter.remove_value_listener(cb)
+# 			# self._parameter_lcd_name = ' '
+# 			# self._parameter_last_value = ' '
+# 			# self._monobridge.notification_to_bridge(' ', ' ', self)
 
 
 

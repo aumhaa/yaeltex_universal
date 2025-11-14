@@ -17,7 +17,9 @@ from _Generic.Devices import *
 from .Map import *
 from .debug import initialize_debug
 logger = logging.getLogger(__name__)
-debug = initialize_debug()
+
+LOCAL_DEBUG = False
+debug = initialize_debug(local_debug=LOCAL_DEBUG)
 
 def best_of_parameter_bank(device, device_bob_dict=DEVICE_BOB_DICT):
 	if device:

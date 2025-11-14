@@ -329,14 +329,16 @@ class YAELTEXColors:
 		MuteOn = MonoColor(16)
 		MuteOff = MonoColor(0)
 		ArmSelected = MonoColor(121)
+		ArmSelectedImplicit = MonoColor(118)
 		ArmUnselected = MonoColor(7)
 		ArmOff = MonoColor(0)
 		StopClip = MonoColor(60)
-		SelectedOn = MonoColor(49)
+		SelectedOn = MonoColor(127)
 		SelectedOff = MonoColor(0)
 		XFadeOff = MonoColor(0)
 		XFadeAOn = MonoColor(49)
 		XFadeBOn = MonoColor(75)
+
 
 
 	class Recording:

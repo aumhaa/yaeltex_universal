@@ -10,7 +10,8 @@ from ableton.v2.base.event import listens, listens_group
 
 from .debug import initialize_debug
 
-debug = initialize_debug()
+LOCAL_DEBUG = False
+debug = initialize_debug(local_debug=LOCAL_DEBUG)
 
 class DeviceNavigator(Component):
 	__module__ = __name__
