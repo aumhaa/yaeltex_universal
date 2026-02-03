@@ -13,9 +13,6 @@ class SpecialTransportComponent(TransportComponent):
 
 	new_tap_tempo_button = ButtonControl()
 
-	# def _update_stop_button_color(self):
-	# 	self._stop_button.color = 'Transport.StopOn' if self._play_toggle.is_toggled else 'Transport.StopOff'
-
 	@new_tap_tempo_button.pressed
 	def tap_tempo_button(self, button):
 		debug('tap_tempo')

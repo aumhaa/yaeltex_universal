@@ -6,8 +6,10 @@ import Live
 import math
 import sys
 import logging
+import traceback
 from re import *
 from itertools import chain, starmap
+from future.moves.itertools import zip_longest
 
 from ableton.v2.base import inject, listens, listens_group, nop
 from ableton.v2.control_surface import ControlSurface, Layer, Skin, PrioritizedResource, DeviceBankRegistry
@@ -16,12 +18,15 @@ from ableton.v2.control_surface.components import  TransportComponent, Backgroun
 from ableton.v2.control_surface.components.mixer import SimpleTrackAssigner
 from ableton.v2.control_surface.mode import AddLayerMode, ModesComponent, DelayMode
 from ableton.v2.control_surface.components.session_recording import *
+from ableton.v2.control_surface.components.device_parameters import DisplayingDeviceParameterComponent
+from ableton.v2.control_surface.components import DeviceComponent as OriginalDeviceComponent
 
 from .Map import *
 from .colors import *
 from .mono_encoder import MonoEncoderElement
 from .mono_mixer import MonoMixerComponent, MonoChannelStripComponent
 from .device import DeviceComponent
+# from .device_new import DeviceComponent
 from .mono_button import MonoButtonElement
 from .mono_encoder import MonoEncoderElement
 from .device_navigator import *
@@ -33,11 +38,32 @@ from .transport import SpecialTransportComponent
 from .constants import *
 from .utilities import YaeltexSettings
 from .control_surface import YaeltexControlSurface
+from .adaptive_display import *
 from .debug import initialize_debug
 logger = logging.getLogger(__name__)
 
-LOCAL_DEBUG = False
+LOCAL_DEBUG = True
 debug = initialize_debug(local_debug = LOCAL_DEBUG)
+
+# class SpecialDeviceParameterComponent(DisplayingDeviceParameterComponent):
+# 	# __events__ = ('parameters', )
+
+# 	# def __init__(self, *a, **k):
+# 	# 	super(SpecialDeviceParameterComponent, self).__init__(*a, **k)
+	
+# 	# @property
+# 	# def parameters(self):
+# 	# 	return self._parameter_provider.parameters
+
+# 	def _connect_parameters(self):
+# 		parameters = self._parameter_provider.parameters[:self.controls.control_count]
+# 		for control, parameter_info in zip_longest(self.controls, parameters):
+# 			parameter = parameter_info.parameter if parameter_info else None
+# 			control.mapped_parameter = parameter
+# 		# self.notify_parameters()
+
+# 			# if parameter:
+# 			#     control.update_sensitivities(parameter_info.default_encoder_sensitivity, parameter_info.fine_grain_encoder_sensitivity)
 
 
 class YaeltexUniversal(YaeltexControlSurface):
@@ -101,6 +127,8 @@ class YaeltexUniversal(YaeltexControlSurface):
 			self._setup_view_control()
 			self._setup_transport_control()
 			self._setup_device_control()
+			self._setup_display_control()
+			# self._setup_tests()
 		# 	# self._setup_session_recording_component()
 		# 	# self._setup_main_modes()
 		# # self._main_modes.selected_mode = 'Main'
@@ -110,22 +138,16 @@ class YaeltexUniversal(YaeltexControlSurface):
 
 	def _initialize_script(self):
 		debug('YaeltexUniversal _initialize_script')
-		# with self.component_guard():
-		# 	self._setup_controls()
-		# 	self._setup_session_control()
-		# 	self._setup_mixer_control()
-		# 	self._setup_view_control()
-		# 	self._setup_transport_control()
-		# 	self._setup_device_control()
-		# 	# self._setup_session_recording_component()
-		# 	# self._setup_main_modes()
-		# # self._main_modes.selected_mode = 'Main'
-		# # self._main_modes.set_enabled(True)
-		# self._do_combine()
 		super(YaeltexUniversal, self)._initialize_script()
+
 
 	def instance_identifier(self):
 		return self.__c_instance.instance_identifier
+
+
+	def _setup_display_control(self):
+		self._display_control = YaeltexDisplayComponent(mixer = self._mixer, device = self._device, device_parameters = self._device_parameters	)
+		# self._test_display.segment(0).set_data_source(self._mixer.selected_strip().track_name_data_source())
 
 
 	def _setup_controls(self):
@@ -444,6 +466,11 @@ class YaeltexUniversal(YaeltexControlSurface):
 		self._device_navigation.layer = Layer(priority = 4, prev_button = self._device_nav_prev_button, next_button = self._device_nav_next_button)
 		self._device_navigation.set_enabled(True)
 
+		# self._test_device = OriginalDeviceComponent(name = 'Test_Device', device_provider = self._device_provider, device_bank_registry = DeviceBankRegistry())
+		self._device_parameters = SpecialDisplayingDeviceParameterComponent(parameter_provider = self._device)
+
+		# self._device._on_provided_device_changed.subject = self._device_provider
+
 
 	# def _setup_session_recording_component(self):
 	# 	self._clip_creator = ClipCreator()
@@ -484,9 +511,51 @@ class YaeltexUniversal(YaeltexControlSurface):
 				# YaeltexUniversal._combine_active_instances()
 				if not script in globalInstances._active_instances:
 					globalInstances._active_instances.append(script)
-
-
 		debug('connected_scripts:', self._connected_scripts)
 		debug('YaeltexUniversal._active_instances:', globalInstances._active_instances)
 		self._do_combine()
+
+
+	def _handle_display_subscription_update(self, midi_bytes):
+		if midi_bytes[1:7] == tuple([121, 116, 120, 1, 0, 4]):
+			debug('handling display subscription update message:', midi_bytes)
+			element = midi_bytes[7]
+			view = midi_bytes[8]
+			count = midi_bytes[9]
+			subscriptions = [tuple(midi_bytes[10 + i*2:10 + i*2 + 2]) for i in range(count)]
+			if(self._display_control):
+				self._display_control.handle_subscription_message(element, view, subscriptions)
+
+
+	def _handle_sysex(self, midi_bytes):
+		if midi_bytes[1:7] == tuple([121, 116, 120, 1, 0, 4]):
+			try:
+				# self.schedule_message(1, self._handle_display_subscription_update, midi_bytes)
+				self._handle_display_subscription_update(midi_bytes)
+			except Exception as e:
+				debug('exception in handling subscription message:', e)
+				debug(traceback.format_exc())
+		super(YaeltexUniversal, self).handle_sysex(midi_bytes)
+
+
+	def _setup_tests(self):
+		self._on_test_device_parameters_changed.subject = self._device
+		self._on_test_device_provider_device_changed.subject = self._device_provider
+		self._on_test_device_device_changed.subject = self._device
+
+
+	@listens('parameters')
+	def _on_test_device_parameters_changed(self):
+		debug('Device parameters changed:', self._device.parameters)
+
+
+	@listens('device')
+	def _on_test_device_provider_device_changed(self):
+		debug('Device provider device changed:', self._device_provider.device)
+		# self._device._on_provided_device_changed()
+
+	@listens('device')
+	def _on_test_device_device_changed(self):
+		debug('Device device changed:', self._device.device)
+
 #	a

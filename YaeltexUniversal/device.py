@@ -9,8 +9,8 @@ import logging
 
 #from ableton.v2.control_surface.components import DeviceComponent as DeviceComponentBase
 #from _Generic.Devices import best_of_parameter_bank, device_parameters_to_map, number_of_parameter_banks, parameter_bank_names, parameter_banks
-from ableton.v2.base import depends, listens, listens_group, liveobj_valid, EventObject, flatten
-from ableton.v2.control_surface.component import Component
+from ableton.v2.base import depends, listens, listens_group, liveobj_valid, liveobj_changed, EventObject, flatten
+from ableton.v2.control_surface import Component, ParameterProvider
 from ableton.v2.control_surface.control import ButtonControl
 from ableton.v2.control_surface.elements import DisplayDataSource
 from _Generic.Devices import *
@@ -18,7 +18,7 @@ from .Map import *
 from .debug import initialize_debug
 logger = logging.getLogger(__name__)
 
-LOCAL_DEBUG = False
+LOCAL_DEBUG = True
 debug = initialize_debug(local_debug=LOCAL_DEBUG)
 
 def best_of_parameter_bank(device, device_bob_dict=DEVICE_BOB_DICT):
@@ -165,9 +165,10 @@ class DeviceBankRegistry(EventObject):
 				return k
 
 
-
-class DeviceComponentBase(Component):
+class DeviceComponentBase(ParameterProvider, Component):
 	""" Class representing a device in Live """
+	__events__ = ('device', )
+	_provided_parameters = tuple()
 
 	add_macro_button = ButtonControl(color = "Device.AddVariation")
 	delete_macro_button = ButtonControl(color = "Device.DeleteVariation")
@@ -177,9 +178,11 @@ class DeviceComponentBase(Component):
 
 	@depends(device_bank_registry=None)
 	@depends(device_provider=None)
-	def __init__(self, device_provider = None, device_bank_registry = None, *a, **k):
+	def __init__(self, device_provider = None, device_bank_registry = None, decoupled_parameter_list_change_notifications = False, *a, **k):
 		assert device_bank_registry is not None
 		super(DeviceComponentBase, self).__init__(*a, **k)
+		self._parameters_dirty = True
+		self._decoupled_parameter_list_change_notifications = decoupled_parameter_list_change_notifications
 		self._device_bank_registry = device_bank_registry
 		self._device_provider = device_provider
 		self._parameter_controls = None
@@ -200,6 +203,8 @@ class DeviceComponentBase(Component):
 		self.__on_device_bank_changed.subject = self._device_bank_registry
 		self.__on_provided_device_changed.subject = self._device_provider
 		self.__on_provided_device_changed()
+		# self._on_provided_device_changed.subject = self._device_provider
+		# self._on_provided_device_changed()
 
 	def disconnect(self):
 		self._device_bank_registry = None
@@ -224,17 +229,45 @@ class DeviceComponentBase(Component):
 	# 			self.next_macro_button.color = "Device.VariationNavOn" if (index < (count-1)) else "Device.VariationNavOff"
 
 
+	@property
+	def parameters(self):
+		return self._get_provided_parameters()
+
 	def _get_device(self):
 		return self._device_provider.device
 
 	def on_enabled_changed(self):
 		self.update()
 
+	def _device_changed(self, device):
+		current_device = getattr(self._get_device(), '_live_object', self._get_device())
+		return liveobj_changed(current_device, device)
+
+	# @listens('device')
+	# def _on_provided_device_changed(self):
+	# 	debug('DeviceComponentBase: _on_device_changed')
+	# 	self._on_device_changed(self._get_device())
+
+
 	@listens('device')
 	def __on_provided_device_changed(self):
-		self._on_device_changed(self._get_device())
+		# try:
+		# 	debug('DeviceComponentBase: __on_provided_device_changed')
+		# except:
+		# 	debug('exception for DeviceComponentBase: __on_provided_device_changed (unable to print device name)')
+		try:
+			self._on_device_changed(self._get_device())
+			debug('DeviceComponentBase: __on_provided_device_changed to', xstr(self._get_device().name))
+		except:
+			debug('DeviceComponentBase: __on_provided_device_changed Exception')
 
 	def _on_device_changed(self, device):
+		# if self._device_changed(device):
+		self._set_device(device)
+
+
+	def _set_device(self, device):
+		debug('DeviceComponentBase: _set_device to', xstr(device.name) if liveobj_valid(device) else 'None')
 		if liveobj_valid(device):
 			self._release_parameters(self._parameter_controls)
 		self.__on_device_name_changed.subject = device
@@ -247,6 +280,14 @@ class DeviceComponentBase(Component):
 		self.__on_device_name_changed()
 		# self._update_device_macro_buttons.subject = device if hasattr(device, 'selected_variation_index') else None  #this property can't be listened to, so we can't skin it based on whether it can be incremented or decremented :/
 		self.update()
+		self.notify_device()
+		self._update_parameters()
+		self._DeviceComponentBase__on_parameters_changed_in_device.subject = device
+
+	@listens('parameters')
+	def __on_parameters_changed_in_device(self):
+		self._update_parameters()
+
 
 	@randomize_macro_button.pressed
 	def randomize_macro_button(self, button):
@@ -443,8 +484,20 @@ class DeviceComponentBase(Component):
 
 	@listens('parameters')
 	def __on_parameters_changed(self):
+		self.notify_parameters_changed()
 		self.update()
 
+	def _update_parameters(self):
+		self._parameters_dirty = True
+		if not self._decoupled_parameter_list_change_notifications:
+			self.update_and_notify_parameters()
+
+	def update_and_notify_parameters(self):
+		if self._parameters_dirty:
+			self._provided_parameters = self._get_provided_parameters()
+			self.notify_parameters()
+			self._parameters_dirty = False
+		
 	def _on_off_parameter(self):
 		result = None
 		if liveobj_valid(self._get_device()):
@@ -541,8 +594,27 @@ class DeviceComponentBase(Component):
 					control.release_parameter()
 
 
+	def _get_provided_parameters(self):
+		_, parameters = self._current_bank_details() if self._get_device() else (None, ())
+		# return [self._create_parameter_info(param, name) for param, name in parameters]
+		return [self._create_parameter_info(param) for param in parameters]
+		# return parameters
+
+	def _create_parameter_info(self, parameter):
+		if parameter is not None:
+			return ParameterInfo(parameter, parameter.name)
+		return ParameterInfo(None, '')
+
+
 class DeviceComponent(DeviceComponentBase):
 
 
 	def _get_device(self):
 		return self._device_provider.device if self._device_provider else None
+
+
+class ParameterInfo(object):
+
+	def __init__(self, parameter, name):
+		self.parameter = parameter
+		self.name = name

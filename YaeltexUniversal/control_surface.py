@@ -9,6 +9,7 @@ import sys
 import logging
 logger = logging.getLogger(__name__)
 
+from ableton.v2.base import task
 from ableton.v2.control_surface import midi
 from ableton.v2.control_surface.profile import profile
 from ableton.v2.control_surface.control_surface import *
@@ -17,10 +18,10 @@ from ableton.v2.control_surface.input_control_element import InputControlElement
 from .utilities import YaeltexSettings
 from .debug import initialize_debug
 
-LOCAL_DEBUG = False
+LOCAL_DEBUG = True
 debug = initialize_debug(local_debug = LOCAL_DEBUG)
 
-QUERY_INTERVAL = 10
+QUERY_INTERVAL = 3
 
 class YaeltexControlSurface(ControlSurface):
 
@@ -36,9 +37,11 @@ class YaeltexControlSurface(ControlSurface):
 		with self.component_guard():
 			self._yaeltex_settings = YaeltexSettings(model = self._sysex_id, control_surface = self)
 		self.schedule_message(1, self._open_log)
-		#self._connection_routine = self._tasks.add(task.sequence(task.wait(10), task.run(self._check_connection)))
-		#self._connection_routine.restart()
-		self.schedule_message(2, self._check_connection)
+		self._connection_routine = self._tasks.add(task.sequence(task.wait(QUERY_INTERVAL), task.run(self._check_connection)))
+		self._connection_routine.kill()
+		self._connection_routine.restart()
+		# self._check_connection()
+		# self.schedule_message(2, self._check_connection)
 
 
 	def _open_log(self):
@@ -54,15 +57,20 @@ class YaeltexControlSurface(ControlSurface):
 	def port_settings_changed(self):
 		debug('port settings changed!')
 		self._connected = False
-		self.schedule_message(QUERY_INTERVAL, self._check_connection)
+		# self._connection_routine.kill()
+		self._connection_routine.restart()
+		# self.schedule_message(QUERY_INTERVAL, self._check_connection)
 
 
 	def _check_connection(self):
+		# debug(self._model_name, '_check_connection()')
 		if not self._connected:
-			debug(self._model_name, '_check_connection')
+			debug(self._model_name, 'querrying surface....')
 			self._yaeltex_settings.query_surface()
-			#self._connection_routine.restart()
-			self.schedule_message(QUERY_INTERVAL, self._check_connection)
+			debug(self._model_name, 'restarting connection routine...')
+			self._connection_routine.kill()
+			self._connection_routine.restart()
+			# self.schedule_message(QUERY_INTERVAL, self._check_connection)
 
 
 	def _initialize_hardware(self):
@@ -81,24 +89,46 @@ class YaeltexControlSurface(ControlSurface):
 	def process_midi_bytes(self, midi_bytes, midi_processor):
 		if midi.is_sysex(midi_bytes):
 			try:
-				self.handle_sysex(midi_bytes)
+				self._handle_sysex(midi_bytes)
 			except:
 				pass
 		super(YaeltexControlSurface, self).process_midi_bytes(midi_bytes, midi_processor)
 
 
-	def handle_sysex(self, midi_bytes):
-		debug('sysex: ', str(midi_bytes))
+
+	def _handle_sysex(self, midi_bytes):
+		# debug('sysex: ', str(midi_bytes))
 		#debug('matching:', midi_bytes[3:11], 'to', tuple([6, 2, 0, 1, 97, 1, 0]  + [self._sysex_id]))
 		# if midi_bytes[3:11] == tuple([6, 2, 0, 1, 97, 1, 0]  + [self._sysex_id]):
 		if midi_bytes[1:8] == tuple([121, 116, 120, 1, 1, 4, 1]):
 			if not self._connected:
 				debug('connecting from sysex...')
-				#self._connection_routine.kill()
+				self._connection_routine.kill()
 				self._connected = True
 				#self._livid_settings.set_model(midi_bytes[11])
 				self._initialize_hardware()
 				self._initialize_script()
+		# elif midi_bytes[1:7] == tuple([121, 116, 120, 1, 0, 4]):
+		# 	debug('received subscription  sysex for element:', midi_bytes[7], 'view:', midi_bytes[8], 'count', midi_bytes[9], 'subscriptions:', midi_bytes[10:])
+		# elif midi_bytes[1:7] == tuple([121, 116, 120, 1, 0, 4]):
+		# 	# debug('received subscription  sysex for element:', midi_bytes[7], 'view:', midi_bytes[8], 'count', midi_bytes[9], 'subscriptions:', midi_bytes[10:])
+		# 	# handle subscription message
+		# 	try:
+		# 		# element = midi_bytes[7]
+		# 		# view = midi_bytes[8]
+		# 		# count = midi_bytes[9]
+		# 		# # debug('handling subscription message for element:', element, 'view:', view, 'count:', count)
+		# 		# subscriptions = [tuple(midi_bytes[10 + i*2:10 + i*2 + 2]) for i in range(count)]
+		# 		# debug('subscriptions:', subscriptions)
+		# 		# self._check_subscription()
+		# 		# self._handle_display_subscription_update(element, view, subscriptions)
+		# 		# self._tasks.schedule(task.run(self._check_subscription), 1)
+		# 		# args = {element: element, view: view, subscriptions: subscriptions}
+		# 		self.schedule_message(1, self._handle_display_subscription_update, midi_bytes)
+		# 	except:
+		# 		debug('exception in handling subscription message')
+		# super(YaeltexUniversal, self).handle_sysex(midi_bytes)
+
 
 
 	def disconnect(self):

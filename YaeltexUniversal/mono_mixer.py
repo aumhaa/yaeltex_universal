@@ -19,6 +19,7 @@ import ableton.v2.base.task as Task
 from ableton.v2.control_surface import DeviceBankRegistry
 from ableton.v2.control_surface.components import ChannelStripComponent as ChannelStripComponentBase, MixerComponent as MixerComponentBase
 from ableton.v2.control_surface import ParameterSlot
+from ableton.v2.control_surface.components.device_parameters import DisplayingDeviceParameterComponent
 
 from Push2.colors import translate_color_index
 
@@ -28,7 +29,7 @@ from .device import DeviceComponent
 from .debug import *
 from .Map import VU_METER_LOG_SCALING as VU_METER_LOG_SCALING
 
-LOCAL_DEBUG = False
+LOCAL_DEBUG = True
 debug = initialize_debug(local_debug = LOCAL_DEBUG)
 
 EQ_DEVICES = {'Eq8': {'Gains': [ '%i Gain A' % (index + 1) for index in range(8) ]},
@@ -175,6 +176,8 @@ class MonoChannelStripComponent(ChannelStripComponentBase):
 	_output_meter_left_control = None
 	_output_meter_right_control = None
 	_summed_output_meter_level_control = None
+	_summed_output_meter_level = 0
+
 	_default_color = 'DefaultButton.On'
 
 	def __init__(self, *a, **k):
@@ -201,6 +204,7 @@ class MonoChannelStripComponent(ChannelStripComponentBase):
 
 		self._device_provider = [None for index in range(8)]
 		self._device_component = [None for index in range(8)]
+		# self._device_parameter_component = [None for index in range(8)]	
 		for index in range(8):
 			self._device_provider[index] = ChannelStripStaticDeviceProvider()
 			self._device_component[index] = ChannelStripDeviceComponent(device_provider = self._device_provider[index], device_bank_registry = DeviceBankRegistry(), *a, **k)
@@ -298,6 +302,7 @@ class MonoChannelStripComponent(ChannelStripComponentBase):
 		self._update_device_selection()
 
 
+
 	# @listens('selected_track')
 	# def _on_instance_selected_track_changed(self):
 	# 	if liveobj_valid(self._track) or self.empty_color == None:
@@ -320,6 +325,8 @@ class MonoChannelStripComponent(ChannelStripComponentBase):
 		self._detect_eq(track)
 		self._update_playing_clip()
 		self._track_state.set_track(self._track)
+		self._on_track_color_changed.subject = self._track
+		self._on_track_color_changed()
 		super(MonoChannelStripComponent,self).set_track(track)
 
 
@@ -338,6 +345,21 @@ class MonoChannelStripComponent(ChannelStripComponentBase):
 			# 	debug('restarting _vu_sum_task')
 				#self._vu_sum_task.restart()
 			self.update()
+
+	@listenable_property
+	def summed_output_meter_level(self):
+		# debug('returning summed_output_meter_level:', self._summed_output_meter_level)	
+		return self._summed_output_meter_level
+
+	@listenable_property
+	def color(self):
+		return self._color_for_track(self._track)
+
+
+	@listens('color')
+	def _on_track_color_changed(self):
+		debug('track color changed')
+		self.notify_color()
 
 
 	def set_output_meter_left_control(self, control):
@@ -375,6 +397,7 @@ class MonoChannelStripComponent(ChannelStripComponentBase):
 				# debug('scaled_level is:', scaled_level)
 				self._output_meter_level_control.send_value(scaled_level)
 
+
 	def _on_output_meter_left_changed(self):
 		if self.is_enabled() and self._output_meter_left_control != None:
 			if liveobj_valid(self._track) and self._track.has_audio_output:
@@ -405,12 +428,16 @@ class MonoChannelStripComponent(ChannelStripComponentBase):
 					level = max(left_level, right_level)
 					scaled_level = self._scaled_value(level, 0, 1)
 					self._summed_output_meter_level_control.send_value(scaled_level, True)
+					self._summed_output_meter_level = scaled_level/127
 					# debug('summed output:', scaled_level, left_level, right_level)
 				elif self._track.has_midi_input:
-					level = int(self._track.output_meter_level*128)
+					level = int(self._track.output_meter_level*127)
 					# scaled_level = (level/8)*127
 					self._summed_output_meter_level_control.send_value(level, True)
+					self._summed_output_meter_level = self._track.output_meter_level
 					# debug('summed midi output', level)
+				self.notify_summed_output_meter_level()
+		
 
 	def _on_mute_changed(self):
 		if self.is_enabled() and self._mute_button != None:

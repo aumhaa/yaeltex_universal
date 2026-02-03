@@ -5,7 +5,6 @@
 import Live
 import math
 import logging
-# from re import *
 
 from ableton.v2.control_surface.components import SessionComponent
 from ableton.v2.control_surface.control import ButtonControl
